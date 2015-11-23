@@ -28,10 +28,12 @@ const unsigned int PROG_PLANET = 0;
 
 const float fovy = (float) (PI / 4);
 const float zNear = 0.10f;
-const float zFar = 5.0f;
+const float zFar = 10.0f;
 
 glm::mat4 projection;
-glm::vec3 cameraPosition(1.75, 1.75, 1.35);
+float theta = 0.58539816339f;
+float phi = 0.65f;
+float zoom = 3.0f;
 
 //====================================
 // Main
@@ -47,6 +49,7 @@ int main(int argc, char* argv[]);
 void mainLoop();
 void errorCallback(int error, const char *description);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void updateCamera();
 
 //====================================
 // Setup/init Stuff

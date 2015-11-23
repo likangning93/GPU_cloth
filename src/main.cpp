@@ -88,6 +88,11 @@ bool init(int argc, char **argv) {
 
 	initSimulation();
 
+	glm::vec3 cameraPosition;
+	cameraPosition.x = zoom * sin(phi) * sin(theta);
+	cameraPosition.z = zoom * cos(theta);
+	cameraPosition.y = zoom * cos(phi) * sin(theta);
+
     projection = glm::perspective(fovy, float(width) / float(height), zNear, zFar);
     glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0), glm::vec3(0, 0, 1));
 
@@ -112,9 +117,9 @@ void initShaders(GLuint * program) {
     if ((location = glGetUniformLocation(program[PROG_PLANET], "u_projMatrix")) != -1) {
         glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
     }
-    if ((location = glGetUniformLocation(program[PROG_PLANET], "u_cameraPos")) != -1) {
-        glUniform3fv(location, 1, &cameraPosition[0]);
-    }
+    //if ((location = glGetUniformLocation(program[PROG_PLANET], "u_cameraPos")) != -1) {
+    //    glUniform3fv(location, 1, &cameraPosition[0]);
+    //}
 }
 
 //====================================
@@ -180,5 +185,39 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
     }
+	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+		phi += 0.1f;
+		updateCamera();
+	}
+	if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
+		phi -= 0.1f;
+		updateCamera();
+	}
+	if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
+		theta -= 0.1f;
+		updateCamera();
+	}
+	if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
+		theta += 0.1f;
+		updateCamera();
+	}
 }
 
+void updateCamera() {
+	glm::vec3 cameraPosition;
+	cameraPosition.x = zoom * sin(phi) * sin(theta);
+	cameraPosition.z = zoom * cos(theta);
+	cameraPosition.y = zoom * cos(phi) * sin(theta);
+
+	int width = 1280;
+	int height = 720;
+	projection = glm::perspective(fovy, float(width) / float(height), zNear, zFar);
+	glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0), glm::vec3(0, 0, 1));
+	projection = projection * view;
+	glUseProgram(program[PROG_PLANET]);
+
+	GLint location;
+	if ((location = glGetUniformLocation(program[PROG_PLANET], "u_projMatrix")) != -1) {
+		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
+	}
+}

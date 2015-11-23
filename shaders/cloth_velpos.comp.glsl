@@ -5,7 +5,7 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_VELPOS 16
 
-#define DT 0.005
+#define DT 0.01
 
 layout(location = 0) uniform int numPoints;
 
@@ -28,7 +28,8 @@ void main() {
     uint idx = gl_GlobalInvocationID.x;
 
     // don't do the last two: they're hardcoded constraints
-    if (idx == numPoints - 1 || idx == numPoints - 2) {       
+    if (idx == numPoints - 1 || idx == numPoints - 2) {
+        //Pos[idx].z += 0.1;
         return;
     }
 
