@@ -6,7 +6,7 @@
 #define WORK_GROUP_SIZE_ACC 16
 
 // acceleration due to gravity
-const float G = -0.098;
+const float G = -0.98;
 
 layout(std430, binding = 0) readonly buffer _Pos {
     vec3 Pos[];

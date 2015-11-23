@@ -32,7 +32,8 @@ void main() {
 
     vec3 diff = Pos[int(constraint.y)] - Pos[pointIdx];
     float dist = length(diff);
-    vec3 forceContrib = K * (dist - constraint.z) * (diff / dist);
+    if (dist < 0.0001) return; // avoid singularities
+    vec3 forceContrib = K * abs(dist - constraint.z) * (diff / dist);
 
     // TODO: atomics?
     Force[pointIdx] += forceContrib;

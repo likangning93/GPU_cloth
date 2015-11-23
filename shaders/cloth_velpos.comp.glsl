@@ -5,7 +5,9 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_VELPOS 16
 
-#define DT 0.2
+#define DT 0.005
+
+layout(location = 0) uniform int numPoints;
 
 layout(std430, binding = 0) readonly buffer _Force {
     vec3 Force[];
@@ -19,10 +21,16 @@ layout(std430, binding = 2) buffer _Vel {
 
 layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1) in;
 
-void main() {
+void main() {    
+
     // gl_GlobalInvocationID is equal to:
     //     gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID.
     uint idx = gl_GlobalInvocationID.x;
+
+    // don't do the last two: they're hardcoded constraints
+    if (idx == numPoints - 1 || idx == numPoints - 2) {       
+        return;
+    }
 
     vec3 p = Pos[idx];
     vec3 v = Vel[idx];
@@ -31,7 +39,7 @@ void main() {
     // explicit symplectic integration:
     // update the velocity and compute position with updated velocity
     v += DT * f;
-    p += DT * v * 0.01; // damping factor
-    Vel[idx] = v;
+    p += DT * v;
+    Vel[idx] = v * 0.9; // damping factor
     Pos[idx] = p;
 }

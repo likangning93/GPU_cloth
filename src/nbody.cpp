@@ -11,6 +11,8 @@
 #define WORK_GROUP_SIZE_ACC 16
 #define WORK_GROUP_SIZE_VELPOS 16
 
+GLuint unif_numPoints = 0;
+
 static GLuint ssbo_pos;
 static GLuint ssbo_vel;
 static GLuint ssbo_force;
@@ -58,6 +60,9 @@ void initComputeProgs() {
     prog_externalForces = initComputeProg("shaders/cloth_externalForces.comp.glsl");
 	prog_internalForces = initComputeProg("shaders/cloth_internalForces.comp.glsl");
     prog_velpos = initComputeProg("shaders/cloth_velpos.comp.glsl");
+
+	glUseProgram(prog_velpos);
+	glUniform1i(unif_numPoints, N_WIDE * N_LENGTH + 2);
 }
 
 glm::vec3 generateRandomVec3() {
@@ -127,7 +132,9 @@ void initSimulation() {
 			int p1 = x * N_LENGTH + z;
 			int p2 = x * N_LENGTH + z + 1;
 			int p3 = (x + 1) * N_LENGTH + z + 1;
-			int p4 = (x + 1) * N_LENGTH + z + 1;
+			int p4 = (x + 1) * N_LENGTH + z;
+
+			printf("%i %i %i %i\n", p1, p2, p3, p4);
 
 			// a constraint as a vec3 is index, index, rest length
 
@@ -169,7 +176,9 @@ void initSimulation() {
 	hst_constraints[constraintCounter + 2] = genConstraint(p3, p4, hst_pos);
 	hst_constraints[constraintCounter + 3] = genConstraint(p4, p3, hst_pos);
 
-	//glm::vec3 peekPoint = hst_pos[p3];
+	//glm::vec3 peekPoint1 = hst_pos[p3];
+	//glm::vec3 peekPoint2 = hst_pos[p1];
+	//
 	//glm::vec3 peek1 = hst_constraints[constraintCounter + 0];
 	//glm::vec3 peek2 = hst_constraints[constraintCounter + 1];
 	//glm::vec3 peek3 = hst_constraints[constraintCounter + 2];
@@ -240,7 +249,6 @@ void stepSimulation() {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_force);
 	// Bind constraints
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_constraints);
-
 	// Dispatch compute shader
 	int workGroupCountInternal = (numConstraints - 1) / WORK_GROUP_SIZE_ACC + 1;
 	glDispatchCompute(workGroupCountInternal, 1, 1);
