@@ -31,7 +31,7 @@ const float zNear = 0.10f;
 const float zFar = 10.0f;
 
 glm::mat4 projection;
-float theta = 1.57f;
+float theta = 1.52f;
 float phi = 0.65f;
 float zoom = 2.0f;
 
