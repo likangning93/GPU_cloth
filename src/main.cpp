@@ -157,7 +157,7 @@ void mainLoop() {
         GLuint ssbo = getSSBOPosition();
         glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
 
-        glDrawArrays(GL_POINTS, 0, N_FOR_VIS);
+        glDrawArrays(GL_POINTS, 0, N_LENGTH * N_WIDE + 2);
 
         glPointSize(1.0f);
         glUseProgram(0);

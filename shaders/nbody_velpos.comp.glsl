@@ -30,6 +30,8 @@ void main() {
     vec3 v = Vel[idx];
     vec3 a = Acc[idx];
     v += DT * a;
+    v = vec3(0.0, 0.0, 0.01);
+
     p += DT * v;
     Vel[idx] = v;
     Pos[idx] = p;

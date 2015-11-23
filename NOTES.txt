@@ -32,7 +32,7 @@ BASIC INTEGRATOR WORKFLOW AND REQUIREMENTS
 	5) draw
 
 TODO:
--add host buffers. modify position generation to produce a grid
--generate vec3 constraints
+-add host buffers. modify position generation to produce a grid [done, I think?]
+-generate vec3 constraints [done, I think?]
 -add new compute shaders and setup
 -add compute step invocations
