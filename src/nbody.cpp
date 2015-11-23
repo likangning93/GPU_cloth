@@ -11,14 +11,14 @@
 #define WORK_GROUP_SIZE_ACC 16
 #define WORK_GROUP_SIZE_VELPOS 16
 
-GLuint unif_numPlanets = 0;
-
-static GLuint prog_nbody_acc;
-static GLuint prog_nbody_velpos;
 static GLuint ssbo_pos;
 static GLuint ssbo_vel;
+static GLuint ssbo_force;
 static GLuint ssbo_constraints;
 
+static GLuint prog_externalForces;
+static GLuint prog_internalForces;
+static GLuint prog_velpos;
 
 static GLuint initComputeProg(const char *path) {
     GLuint prog = glCreateProgram();
@@ -55,14 +55,9 @@ static GLuint initComputeProg(const char *path) {
 }
 
 void initComputeProgs() {
-    prog_nbody_acc    = initComputeProg("shaders/nbody_acc.comp.glsl");
-    prog_nbody_velpos = initComputeProg("shaders/nbody_velpos.comp.glsl");
-	int N_FOR_VIS = N_WIDE * N_LENGTH + 2;
-	glUseProgram(prog_nbody_acc);
-    glUniform1i(unif_numPlanets, N_FOR_VIS);
-
-    glUseProgram(prog_nbody_velpos);
-    glUniform1i(unif_numPlanets, N_FOR_VIS);
+    prog_externalForces = initComputeProg("shaders/cloth_externalForces.comp.glsl");
+	prog_internalForces = initComputeProg("shaders/cloth_internalForces.comp.glsl");
+    prog_velpos = initComputeProg("shaders/cloth_velpos.comp.glsl");
 }
 
 glm::vec3 generateRandomVec3() {
@@ -82,6 +77,7 @@ void initSimulation() {
 	// go make some gl buffers
     glGenBuffers(1, &ssbo_pos);
     glGenBuffers(1, &ssbo_vel);
+	glGenBuffers(1, &ssbo_force);
     glGenBuffers(1, &ssbo_constraints);
 
     GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
@@ -111,7 +107,7 @@ void initSimulation() {
 	// TODO: add a way to specify constraints
 	hst_pos[N_FOR_VIS - 2] = corner;
 	hst_pos[N_FOR_VIS - 1] = corner;
-	hst_pos[N_FOR_VIS - 1].x += width;
+	hst_pos[N_FOR_VIS - 1].x += (N_WIDE - 1) * dwidth;
 
 	// generate constraints
 	// 1--2--x
@@ -162,7 +158,22 @@ void initSimulation() {
 			constraintCounter += 12;
 		}
 	}
+	// add constraints for the 2 attachment points
+	int p1 = 0;
+	int p2 = N_FOR_VIS - 2;
+	int p3 = (N_WIDE - 1) * N_LENGTH;
+	int p4 = N_FOR_VIS - 1;
 
+	hst_constraints[constraintCounter + 0] = genConstraint(p1, p2, hst_pos);
+	hst_constraints[constraintCounter + 1] = genConstraint(p2, p1, hst_pos);
+	hst_constraints[constraintCounter + 2] = genConstraint(p3, p4, hst_pos);
+	hst_constraints[constraintCounter + 3] = genConstraint(p4, p3, hst_pos);
+
+	//glm::vec3 peekPoint = hst_pos[p3];
+	//glm::vec3 peek1 = hst_constraints[constraintCounter + 0];
+	//glm::vec3 peek2 = hst_constraints[constraintCounter + 1];
+	//glm::vec3 peek3 = hst_constraints[constraintCounter + 2];
+	//glm::vec3 peek4 = hst_constraints[constraintCounter + 3];
 
     // Initialize cloth positions on GPU
 
@@ -182,7 +193,13 @@ void initSimulation() {
     glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec3),
             NULL, GL_STREAM_COPY);
 
-    // Allocate constraints accelerations on GPU
+	// Initialize forces on GPU
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_force);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec3),
+		NULL, GL_STREAM_COPY);
+
+    // Allocate constraints on GPU
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_constraints);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, N_CONSTRAINTS * sizeof(glm::vec3),
@@ -200,30 +217,45 @@ void initSimulation() {
 }
 
 void stepSimulation() {
-    // Acceleration step
-	int N_FOR_VIS = N_WIDE * N_LENGTH + 2;
+	int numVertices = N_WIDE * N_LENGTH + 2;
+	int numConstraints = N_CONSTRAINTS;
 
-    glUseProgram(prog_nbody_acc);
-    // Bind nbody-acc input
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_pos);
-    // Bind nbody-acc output
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_constraints);
+	/*** compute external forces per vertex ***/
+
+	glUseProgram(prog_externalForces);
+	// Bind positions input
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_pos);
+	// Bind force output
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_force);
+	// Dispatch compute shader
+	int workGroupCountExternal = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
+	glDispatchCompute(workGroupCountExternal, 1, 1);
+	
+	/*** compute internal forces per constraint ***/
+
+	glUseProgram(prog_internalForces);
+	// Bind positions input
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_pos);
+	// Bind force
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_force);
+	// Bind constraints
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_constraints);
+
+	// Dispatch compute shader
+	int workGroupCountInternal = (numConstraints - 1) / WORK_GROUP_SIZE_ACC + 1;
+	glDispatchCompute(workGroupCountInternal, 1, 1);
+
+	// update velocities and positions. damp velocities
+	glUseProgram(prog_velpos);
+	// Bind force
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_force);
+	// Bind positions input
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_pos);
+	// Bind velocities
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_vel);
 
     // Dispatch compute shader
-	int workGroupCountAcc = (N_CONSTRAINTS - 1) / WORK_GROUP_SIZE_ACC + 1;
-    //glDispatchCompute(workGroupCountAcc, 1, 1);
-
-    // Velocity/position update step
-
-    glUseProgram(prog_nbody_velpos);
-    // Bind nbody-velpos input
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo_constraints);
-    // Bind nbody-velpos input/outputs
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, ssbo_pos);
-    glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, ssbo_vel);
-
-    // Dispatch compute shader
-    int workGroupCountVelPos = (N_FOR_VIS - 1) / WORK_GROUP_SIZE_VELPOS + 1;
+	int workGroupCountVelPos = (numVertices - 1) / WORK_GROUP_SIZE_VELPOS + 1;
     glDispatchCompute(workGroupCountVelPos, 1, 1);
 }
 
