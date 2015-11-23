@@ -1,3 +1,11 @@
+11/23-24/2015
+TODO:
+-figure out what's causing drawing in weird space. ask Kai?
+-move mesh into its own class. load an obj instead of doing your jank thing
+-figure out how to draw polys (read about geometry shaders)
+-read up on compute shader memory
+-add a plane and some basic shading
+
 11/23/2015
 BASIC INTEGRATOR NOTES
 -we'll do a basic euler for now
@@ -34,5 +42,5 @@ BASIC INTEGRATOR WORKFLOW AND REQUIREMENTS
 TODO:
 -add host buffers. modify position generation to produce a grid [done, I think?]
 -generate vec3 constraints [done, I think?]
--add new compute shaders and setup
--add compute step invocations
+-add new compute shaders and setup [done, I think?]
+-add compute step invocations [done, I think?]

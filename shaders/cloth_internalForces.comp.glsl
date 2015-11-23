@@ -36,6 +36,6 @@ void main() {
     vec3 forceContrib = K * abs(dist - constraint.z) * (diff / dist);
 
     // TODO: atomics?
-    memoryBarrier();
+    memoryBarrierBuffer();
     Force[pointIdx] += forceContrib;
 }
