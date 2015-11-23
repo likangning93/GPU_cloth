@@ -1,0 +1,38 @@
+11/23/2015
+BASIC INTEGRATOR NOTES
+-we'll do a basic euler for now
+-steps:
+	-compute forces
+	-compute external forces
+	-resolve constraints
+	-damp velocity
+	-render
+-we'll also try ping-ponging
+-but how to compute forces? -> I... guess we didn't have to do this -> actually, we did
+-so go read the 563 HW writeup
+
+IMPLEMENTATION NOTES AND QUESTIONS
+-we need a datastructure to show connectivity
+-how are we going to go from vertices to triangles? hmmm...
+
+BASIC INTEGRATOR WORKFLOW AND REQUIREMENTS
+-so we need a buffer of constraints
+	-we can use vec3s for these: -> can we just adapt the acceleration buffer? probably.
+		-x = point idx 1
+		-y = point idx 2
+		-z = rest length
+	-we'll need a force buffer if we're parallelizing over constraints -> should just be another vec3
+		-may need to use atomics to do force accumulation
+	-for now we'll hardcode that indices N - 2 and N - 1 are fixed constraints
+
+	1) kernel -> compute external forces -> easy peasy? for now
+	2) kernel -> for each constraint, compute internal force contribution
+	3) kernel -> integrate explicit euler -> kernel
+	4) kernel -> damp velocity
+	5) draw
+
+TODO:
+-add host buffers. modify position generation to produce a grid
+-generate vec3 constraints
+-add new compute shaders and setup
+-add compute step invocations

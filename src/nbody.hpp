@@ -1,6 +1,6 @@
 #pragma once
 
-const int N_FOR_VIS = 5000;
+int N_FOR_VIS = 0;
 
 void initComputeProgs();
 void initSimulation();

@@ -9,7 +9,7 @@ layout(max_vertices = 1) out;
 
 
 void main() {
-    vec3 Position = gl_in[0].gl_Position.xyz / 1e2;
+    vec3 Position = gl_in[0].gl_Position.xyz;
     gl_Position = u_projMatrix * vec4(Position, 1.0);
     EmitVertex();
     EndPrimitive();

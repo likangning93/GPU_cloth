@@ -11,14 +11,6 @@
 #define WORK_GROUP_SIZE_ACC 16
 #define WORK_GROUP_SIZE_VELPOS 16
 
-// Universal gravitation constant.
-const float G = 6.67384e-11;
-// Mass of the "star" at the center.
-const float starMass = 5e10;
-
-/*! Size of the starting area in simulation space. */
-const float scene_scale = 1e2;
-
 GLuint unif_numPlanets = 0;
 
 static GLuint prog_nbody_acc;
@@ -81,23 +73,44 @@ glm::vec3 generateRandomVec3() {
 }
 
 void initSimulation() {
+	// go make some gl buffers
     glGenBuffers(1, &ssbo_pos);
     glGenBuffers(1, &ssbo_vel);
     glGenBuffers(1, &ssbo_acc);
 
     GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
 
-    // Randomize planet positions
+    // build a neat grid of points
+
+	int num_width = 20;
+	int num_length = 20;
+
+	float width = 0.5f;
+	float length = 0.5f;
+
+	glm::vec3 corner = glm::vec3(-width / 2.0f, 0.0f, -length / 2.0f);
+	float dwidth = width / (float)num_width;
+	float dlength = length / (float)num_length;
+
+	N_FOR_VIS = width * length + 2;
 
     glm::vec3 *hst_pos = new glm::vec3[N_FOR_VIS];
-    for (int i = 0; i < N_FOR_VIS; i++) {
-        glm::vec3 r = generateRandomVec3();
-        hst_pos[i].x = scene_scale * r.x;
-        hst_pos[i].y = scene_scale * r.y;
-        hst_pos[i].z = scene_scale * r.z * sqrt(r.x * r.x + r.y * r.y) * 0.1;
+	for (int x = 0; x < num_width; x++) {
+		for (int z = 0; z < num_length; z++) {
+			int i = x * num_length + z;
+			hst_pos[i] = corner;
+			hst_pos[i].x += x * dwidth;
+			hst_pos[i].z += z * dlength;
+		}
     }
 
-    // Initialize planet positions on GPU
+	// add the "constraint" corners to the end.
+	// TODO: add a way to specify constraints
+	hst_pos[N_FOR_VIS - 2] = corner;
+	hst_pos[N_FOR_VIS - 1] = corner;
+	hst_pos[N_FOR_VIS - 1].x += width;
+
+    // Initialize cloth positions on GPU
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos);
     glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec3),
@@ -109,7 +122,7 @@ void initSimulation() {
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
-    // Initialize planet velocities on GPU
+    // Initialize velocities on GPU
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vel);
     glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec3),
@@ -118,12 +131,7 @@ void initSimulation() {
     glm::vec3 *vel = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
             0, N_FOR_VIS * sizeof(glm::vec3), bufMask);
     for (int i = 0; i < N_FOR_VIS; i++) {
-        glm::vec3 R = hst_pos[i];
-
-        float r = glm::length(R) + 0.00001;
-        float s = sqrt(G * starMass / r);
-        glm::vec3 D = glm::normalize(glm::cross(R / r, glm::vec3(0, 0, 1)));
-        vel[i] = s * D;
+        vel[i] = glm::vec3(0.0f, 0.0f, 0.0f);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
@@ -147,7 +155,7 @@ void stepSimulation() {
 
     // Dispatch compute shader
     int workGroupCountAcc = (N_FOR_VIS - 1) / WORK_GROUP_SIZE_ACC + 1;
-    glDispatchCompute(workGroupCountAcc, 1, 1);
+    //glDispatchCompute(workGroupCountAcc, 1, 1);
 
     // Velocity/position update step
 
@@ -160,7 +168,7 @@ void stepSimulation() {
 
     // Dispatch compute shader
     int workGroupCountVelPos = (N_FOR_VIS - 1) / WORK_GROUP_SIZE_VELPOS + 1;
-    glDispatchCompute(workGroupCountVelPos, 1, 1);
+    //glDispatchCompute(workGroupCountVelPos, 1, 1);
 }
 
 GLuint getSSBOPosition() {
