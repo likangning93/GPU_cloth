@@ -1,6 +1,6 @@
 11/23-24/2015
 TODO:
--figure out what's causing drawing in weird space. ask Kai?
+-figure out what's causing drawing in weird space. ask Kai? [done, vec4 vs vec3]
 -move mesh into its own class. load an obj instead of doing your jank thing
 -figure out how to draw polys (read about geometry shaders)
 -read up on compute shader memory

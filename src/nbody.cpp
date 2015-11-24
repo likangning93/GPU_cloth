@@ -92,7 +92,7 @@ void initSimulation() {
 	float width = 0.8f;
 	float length = 0.8f;
 
-	glm::vec3 corner = glm::vec3(-width / 2.0f, 0.0f, -length / 2.0f);
+	glm::vec3 corner = glm::vec3(-width / 2.0f, -length / 2.0f, 0.0);
 	float dwidth = width / (float)N_WIDE;
 	float dlength = length / (float)N_LENGTH;
 
@@ -103,7 +103,7 @@ void initSimulation() {
 		for (int z = 0; z < N_LENGTH; z++) {
 			int i = x * N_LENGTH + z;
 			hst_pos[i] = corner;
-			hst_pos[i].z += z * dlength;
+			hst_pos[i].y += z * dlength;
 			hst_pos[i].x += x * dwidth;
 		}
     }
@@ -187,25 +187,25 @@ void initSimulation() {
     // Initialize cloth positions on GPU
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec3),
+    glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec4),
             NULL, GL_STREAM_COPY);
-    glm::vec3 *pos = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
-            0, N_FOR_VIS * sizeof(glm::vec3), bufMask);
+    glm::vec4 *pos = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+            0, N_FOR_VIS * sizeof(glm::vec4), bufMask);
     for (int i = 0; i < N_FOR_VIS; i++) {
-        pos[i] = hst_pos[i];
+        pos[i] = glm::vec4(hst_pos[i], 1.0);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
     // Initialize velocities on GPU
 
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vel);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec3),
+    glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec4),
             NULL, GL_STREAM_COPY);
 
 	// Initialize forces on GPU
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_force);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec3),
+	glBufferData(GL_SHADER_STORAGE_BUFFER, N_FOR_VIS * sizeof(glm::vec4),
 		NULL, GL_STREAM_COPY);
 
     // Allocate constraints on GPU
