@@ -134,7 +134,7 @@ void initSimulation() {
 			int p3 = (x + 1) * N_LENGTH + z + 1;
 			int p4 = (x + 1) * N_LENGTH + z;
 
-			printf("%i %i %i %i\n", p1, p2, p3, p4);
+			//printf("%i %i %i %i\n", p1, p2, p3, p4);
 
 			// a constraint as a vec3 is index, index, rest length
 

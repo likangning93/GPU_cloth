@@ -2,9 +2,20 @@
 TODO:
 -figure out what's causing drawing in weird space. ask Kai? [done, vec4 vs vec3]
 -move mesh into its own class. load an obj instead of doing your jank thing
+	-needs to hold its own pointers to buffers and stuff
+	-can we put the GL calls in there? or would it make more sense for this to be a struct?
 -figure out how to draw polys (read about geometry shaders)
 -read up on compute shader memory
 -add a plane and some basic shading
+
+-okay. the lack of atomics for floats is a problem. options:
+	-look into manually locking
+	-look into adding an int buffer to do something
+	-float packing (bad idea?)
+	-pack the constraints so there's no interference. -> this is Kai sanctioned
+		-there's at most 8 constraints influencing each point, we need 8 buffers this way
+		-in theory if the mesh is big enough we don't even have to worry about GPU saturation problems
+		-and locks/atomics basically serialize too, right?
 
 11/23/2015
 BASIC INTEGRATOR NOTES

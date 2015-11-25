@@ -6,7 +6,7 @@
 #define WORK_GROUP_SIZE_ACC 16
 
 // spring constant
-const float K = 0.1;
+const float K = 0.7;
 
 layout(std430, binding = 0) readonly buffer _Pos {
     vec3 Pos[];
@@ -36,6 +36,6 @@ void main() {
     vec3 forceContrib = K * abs(dist - constraint.z) * (diff / dist);
 
     // TODO: atomics?
-    memoryBarrierBuffer();
+    //memoryBarrierBuffer();
     Force[pointIdx] += forceContrib;
 }
