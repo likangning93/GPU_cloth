@@ -4,7 +4,8 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include "glslUtility.hpp"
-
+#include "rbody.hpp"
+#include "cloth.hpp"
 
 // TODO: perform timing experiments, based on work group size.
 // You must ALSO change the work group size in the compute shaders.
@@ -82,7 +83,7 @@ void initSimulation() {
 	// go make some gl buffers
     glGenBuffers(1, &ssbo_pos);
     glGenBuffers(1, &ssbo_vel);
-	glGenBuffers(1, &ssbo_force);
+	  glGenBuffers(1, &ssbo_force);
     glGenBuffers(1, &ssbo_constraints);
 
     GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;

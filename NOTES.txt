@@ -1,3 +1,25 @@
+11/28/2015
+-post Thanksgiving!
+-took a look at PBD paper, b/c Harmony suggested implementing PBD instead
+-also took a look at the PBD hw
+-we may just reject bending constraints for now. add them in if necessary
+
+PBD
+-so PBD does an explicit euler step with external forces and then corrects resulting positions and velocities using constraints
+-in this case, the constraints are cloth-y -> mass spring system
+-so it's "unconditionally stable"
+-presumably each step in the PBD will need to be its own shader
+-when we get to collision detect, we'll also need to add shader collision check -> mmmm
+	-perhaps we'll need another buffer of "collisions" per point
+	-b/c if there's n points there's at most n collision constraints, right?
+	-how to deal with edges... an ongoing problem
+
+TODO
+-make "cloth" and "noncloth" classes
+	-need to have GL pointers to buffers
+-get obj loading and drawing working
+-add additional kernels
+
 11/23-24/2015
 TODO:
 -figure out what's causing drawing in weird space. ask Kai? [done, vec4 vs vec3]

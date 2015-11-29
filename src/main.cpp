@@ -5,10 +5,11 @@
  * @date      2013-2015
  * @copyright University of Pennsylvania
  */
-
 #include "main.hpp"
 #include "nbody.hpp"
 #include "checkGLError.hpp"
+#include "rbody.hpp"
+#include "cloth.hpp"
 
 // ================
 // Configuration
