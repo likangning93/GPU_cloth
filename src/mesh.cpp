@@ -11,8 +11,9 @@ Mesh::Mesh(string filename) {
 
   // upload indices
   GLsizei sizeTri = 3 * sizeof(GLuint);
-  glBufferData(GL_ARRAY_BUFFER, indicesTris.size() * sizeTri, &indicesTris[0],
-    GL_STATIC_DRAW);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbo);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesTris.size() * sizeTri,
+	  &indicesTris[0], GL_STATIC_DRAW);
 
   // Initialize cloth positions on GPU
 

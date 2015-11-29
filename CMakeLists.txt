@@ -71,5 +71,13 @@ add_custom_command(
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_SOURCE_DIR}/shaders
-        ${CMAKE_BINARY_DIR}/shaders
+        ${CMAKE_BINARY_DIR}/shaders      
+    )
+
+add_custom_command(
+    TARGET ${CMAKE_PROJECT_NAME}
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_SOURCE_DIR}/meshes
+        ${CMAKE_BINARY_DIR}/meshes      
     )

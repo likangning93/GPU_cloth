@@ -8,7 +8,7 @@
 #include "main.hpp"
 #include "nbody.hpp"
 #include "checkGLError.hpp"
-#include "cloth.hpp"
+#include "mesh.hpp"
 
 // ================
 // Configuration
@@ -18,14 +18,13 @@
 
 const float DT = 0.2f;
 
-Cloth *ground = NULL;
+Mesh *ground = NULL;
 
 /**
  * C main function.
  */
 int main(int argc, char* argv[]) {
     projectName = "565 Compute Shader Intro: N-Body";
-    ground = new Cloth("meshes/ground.obj"); // testing importing obj
 
     if (init(argc, argv)) {
         mainLoop();
@@ -105,6 +104,8 @@ bool init(int argc, char **argv) {
 
     glEnable(GL_DEPTH_TEST);
 
+	ground = new Mesh("meshes/floor.obj"); // testing importing obj
+
     return true;
 }
 
@@ -182,7 +183,9 @@ void drawMesh() {
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ground->idxbo);
 
   // Draw the elements.
-  glDrawElements(GL_TRIANGLES, ground->indicesTris.size(), GL_UNSIGNED_INT, 0);
+
+  // but can't do GL_TRIANGLES?
+  glDrawElements(GL_POINTS, ground->indicesTris.size(), GL_UNSIGNED_INT, 0);
   // end test
 
   glPointSize(1.0f);

@@ -113,6 +113,7 @@ void Cloth::generateConstraints() {
 
     // allocate space for constraints on GPU
     int numConstraints = constraints[i].size();
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_constraints[i]);
     glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec3),
       NULL, GL_STREAM_COPY);
 
