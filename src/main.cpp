@@ -8,7 +8,6 @@
 #include "main.hpp"
 #include "nbody.hpp"
 #include "checkGLError.hpp"
-#include "rbody.hpp"
 #include "cloth.hpp"
 
 // ================
@@ -19,11 +18,14 @@
 
 const float DT = 0.2f;
 
+Cloth *ground = NULL;
+
 /**
  * C main function.
  */
 int main(int argc, char* argv[]) {
     projectName = "565 Compute Shader Intro: N-Body";
+    ground = new Cloth("meshes/ground.obj"); // testing importing obj
 
     if (init(argc, argv)) {
         mainLoop();
@@ -150,33 +152,46 @@ void mainLoop() {
         ss << " fps] " << deviceName;
         glfwSetWindowTitle(window, ss.str().c_str());
 
-        stepSimulation();
+        //stepSimulation();
 
 #if VISUALIZE
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        glPointSize(2.0f);
-
-        glUseProgram(program[PROG_PLANET]);
-
-        glBindVertexArray(planetVAO);
-
-        GLuint ssbo = getSSBOPosition();
-        glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
-
-        glDrawArrays(GL_POINTS, 0, N_LENGTH * N_WIDE + 2);
-
-        glPointSize(1.0f);
-        glUseProgram(0);
-        glBindVertexArray(0);
-
-        glfwSwapBuffers(window);
-        checkGLError("visualize");
+        drawMesh();
 #endif
     }
     glfwDestroyWindow(window);
     glfwTerminate();
 }
 
+void drawMesh() {
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+  glPointSize(2.0f);
+
+  glUseProgram(program[PROG_PLANET]);
+
+  glBindVertexArray(planetVAO);
+
+  GLuint ssbo = getSSBOPosition();
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
+
+  glDrawArrays(GL_POINTS, 0, N_LENGTH * N_WIDE + 2);
+
+  // testing drawing meshes
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ground->ssbo_pos);
+
+  // Tell the GPU where the indices are: in the index buffer
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ground->idxbo);
+
+  // Draw the elements.
+  glDrawElements(GL_TRIANGLES, ground->indicesTris.size(), GL_UNSIGNED_INT, 0);
+  // end test
+
+  glPointSize(1.0f);
+  glUseProgram(0);
+  glBindVertexArray(0);
+
+  glfwSwapBuffers(window);
+  checkGLError("visualize");
+}
 
 void errorCallback(int error, const char *description) {
     fprintf(stderr, "error %d: %s\n", error, description);

@@ -15,7 +15,7 @@ PBD
 	-how to deal with edges... an ongoing problem
 
 TODO
--make "cloth" and "noncloth" classes
+-make "cloth" and "noncloth" classes [done]
 	-need to have GL pointers to buffers
 -get obj loading and drawing working
 -add additional kernels

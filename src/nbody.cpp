@@ -4,8 +4,6 @@
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include "glslUtility.hpp"
-#include "rbody.hpp"
-#include "cloth.hpp"
 
 // TODO: perform timing experiments, based on work group size.
 // You must ALSO change the work group size in the compute shaders.

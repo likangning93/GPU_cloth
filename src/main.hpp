@@ -47,6 +47,7 @@ int main(int argc, char* argv[]);
 // Main loop
 //====================================
 void mainLoop();
+void drawMesh();
 void errorCallback(int error, const char *description);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void updateCamera();
