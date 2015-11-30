@@ -30,12 +30,12 @@ const unsigned int PROG_CLOTH = 1; // program for rendering cloth
 
 const float fovy = (float) (PI / 4);
 const float zNear = 0.10f;
-const float zFar = 10.0f;
+const float zFar = 100.0f;
 
 glm::mat4 projection;
 float theta = 1.22f;
 float phi = -0.65f;
-float zoom = 2.0f;
+float zoom = 5.0f;
 
 //====================================
 // Main

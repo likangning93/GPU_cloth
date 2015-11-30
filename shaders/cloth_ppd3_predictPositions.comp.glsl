@@ -5,7 +5,7 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_VELPOS 16
 
-#define DT 0.2
+#define DT 0.02
 
 layout(std430, binding = 0) readonly buffer _Vel {
     vec4 Vel[];
@@ -20,6 +20,6 @@ layout(std430, binding = 2) buffer _pPos { // predicted position
 layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
-    uint idx = gl_GlobalInvocationID.x;    
+    uint idx = gl_GlobalInvocationID.x;
     pPos[idx] = Pos[idx] + Vel[idx] * DT;
 }

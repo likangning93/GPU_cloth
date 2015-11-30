@@ -97,9 +97,10 @@ bool init(int argc, char **argv) {
 
 	// Initialize simulation
 	std::vector<string> colliders;
-	colliders.push_back("meshes/floor.obj");
+	//colliders.push_back("meshes/floor.obj");
 
 	std::vector<string> cloths;
+	//cloths.push_back("meshes/floor.obj");
 	cloths.push_back("meshes/20x20cloth_falling.obj");
 
 	sim = new Simulation(colliders, cloths);
@@ -168,6 +169,7 @@ void mainLoop() {
 
 #if VISUALIZE
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glClearColor(0.7f, 0.7f, 0.7f, 1.0f);
 
 		// draw all the meshes
 		for (int i = 0; i < sim->numRigids; i++) {

@@ -7,7 +7,8 @@ Cloth::Cloth(string filename) : Mesh(filename) {
   int positionCount = initPositions.size();
 
   glGenBuffers(1, &ssbo_vel);
-  glGenBuffers(1, &ssbo_pos_pred);
+  glGenBuffers(1, &ssbo_pos_pred1);
+  glGenBuffers(1, &ssbo_pos_pred2);
 
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vel);
@@ -16,11 +17,21 @@ Cloth::Cloth(string filename) : Mesh(filename) {
   glm::vec4 *pos4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 	  0, positionCount * sizeof(glm::vec4), bufMask);
   for (int i = 0; i < positionCount; i++) {
-	  pos4[i] = glm::vec4(initPositions[i], 1.0);
+	  pos4[i] = glm::vec4(0.0);
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos_pred);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos_pred1);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
+	  NULL, GL_STREAM_COPY);
+  pos4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+	  0, positionCount * sizeof(glm::vec4), bufMask);
+  for (int i = 0; i < positionCount; i++) {
+	  pos4[i] = glm::vec4(0.0);
+  }
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos_pred2);
   glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
 	  NULL, GL_STREAM_COPY);
   pos4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
@@ -92,7 +103,8 @@ void Cloth::generateConstraints() {
    So what we'll do is determine for each vertex just what constraints it should
    have, then distribute each vert's constraints into each of the 4 buffers.
    We'll do this by building 2 constraints for every edge given in a quadface.
-   We don't actually NEED the N,S,E,W constraints to be uniform like this.
+   We don't actually NEED the N,S,E,W constraints to be uniform like this if
+   we ping-pong the predicted positions.
   *****************************************************************************/
   int numVertices = initPositions.size();
   std::vector<constraintVertexIndices> constraintsPerVertex;
@@ -125,8 +137,8 @@ void Cloth::generateConstraints() {
         glm::vec3 shaderConstraint;
         shaderConstraint[0] = currSet.thisIndex;
         shaderConstraint[1] = currSet.indices[j];
-        glm::vec3 p1 = initPositions.at(i);
-        glm::vec3 p2 = initPositions.at(i);
+		glm::vec3 p1 = initPositions.at(currSet.thisIndex);
+		glm::vec3 p2 = initPositions.at(currSet.indices[j]);
         shaderConstraint[2] = glm::length(p1 - p2);
 		internalConstraints[j].push_back(shaderConstraint);
       }

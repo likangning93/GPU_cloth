@@ -5,7 +5,7 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_ACC 16
 
-#define DT 0.2
+#define DT 0.02
 
 // acceleration due to gravity
 const float G = -0.0098;
@@ -19,6 +19,7 @@ layout(local_size_x = WORK_GROUP_SIZE_ACC, local_size_y = 1, local_size_z = 1) i
 void main() {
     uint idx = gl_GlobalInvocationID.x;
     vec4 vel0 = Vel[idx];
+    vel0.z += G;
 
-    Vel[idx] = vel0 + DT * vec4(0.0, 0.0, G, 0.0);
+    Vel[idx] = vel0;
 }

@@ -8,15 +8,18 @@
 // spring constant
 const float K = 0.9;
 
-const float N = 2.0; // number of times to project
+const float N = 4.0; // number of times to project
 
 layout(std430, binding = 0) readonly buffer _Pos {
     vec4 Pos[];
 };
-layout(std430, binding = 1) buffer _pPos {
-    vec4 pPos[];
+layout(std430, binding = 1) readonly buffer _pPos1 { // source
+    vec4 pPos1[];
 };
-layout(std430, binding = 2) buffer _Constraints {
+layout(std430, binding = 2) buffer _pPos2 { // destination
+    vec4 pPos2[];
+};
+layout(std430, binding = 3) buffer _Constraints {
     vec3 Constraints[];
 };
 
@@ -38,11 +41,11 @@ void main() {
     }
 
     // "prefetch?"
-    vec3 targPos = pPos[targetIdx].xyz;
-    vec3 influencePos = pPos[influenceIdx].xyz;
+    vec3 targPos = pPos1[targetIdx].xyz;
+    vec3 influencePos = pPos1[influenceIdx].xyz;
 
     if (targetIdx == influenceIdx) { // case of a pin
-        pPos[targetIdx] = Pos[targetIdx];
+        pPos2[targetIdx] = Pos[targetIdx];
         return;
     }
 
@@ -54,6 +57,6 @@ void main() {
 
     float k_prime = 1.0 - pow(1.0 - K, 1.0 / N);
 
-    pPos[targetIdx] += vec4(k_prime * dp1, 1.0);
+    pPos2[targetIdx] += vec4(k_prime * dp1, 1.0);
 
 }

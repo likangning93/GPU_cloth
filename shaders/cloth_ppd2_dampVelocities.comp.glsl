@@ -14,6 +14,7 @@ layout(local_size_x = WORK_GROUP_SIZE_ACC, local_size_y = 1, local_size_z = 1) i
 void main() {
     uint idx = gl_GlobalInvocationID.x;
     vec4 vel0 = Vel[idx];
+    vel0 *= 0.95;
 
-    Vel[idx] = vel0 * 0.9;
+    Vel[idx] = vel0;
 }

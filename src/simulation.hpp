@@ -18,7 +18,7 @@ public:
 	int numRigids;
 	int numCloths;
 
-	int projectTimes = 2;
+	int projectTimes = 4;
 
 	GLuint unif_numPoints;
 	GLuint ssbo_addtl_constraints;

@@ -10,7 +10,9 @@
 class Cloth : public Mesh
 {
 public:
-  GLuint ssbo_pos_pred; // predicted positions buffer
+  GLuint ssbo_pos_pred1; // predicted positions buffer
+  GLuint ssbo_pos_pred2; // predicted positions buffer
+
   GLuint ssbo_vel; // shader storage buffer object -> holds velocities
 
   GLuint ssbo_internalConstraints[4];
