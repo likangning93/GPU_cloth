@@ -102,6 +102,7 @@ bool init(int argc, char **argv) {
 
     initShaders(program);
 
+
     glEnable(GL_DEPTH_TEST);
 
 	ground = new Mesh("meshes/floor.obj"); // testing importing obj
@@ -121,9 +122,18 @@ void initShaders(GLuint * program) {
     if ((location = glGetUniformLocation(program[PROG_PLANET], "u_projMatrix")) != -1) {
         glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
     }
-    //if ((location = glGetUniformLocation(program[PROG_PLANET], "u_cameraPos")) != -1) {
-    //    glUniform3fv(location, 1, &cameraPosition[0]);
-    //}
+
+	program[PROG_CLOTH] = glslUtility::createProgram(
+		"shaders/cloth.vert.glsl",
+		"shaders/cloth.geom.glsl",
+		"shaders/cloth.frag.glsl", attributeLocations, 1);
+	glUseProgram(program[PROG_CLOTH]);
+
+	if ((location = glGetUniformLocation(program[PROG_CLOTH], "u_projMatrix")) != -1) {
+		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
+	}
+
+	checkGLError("init shaders");
 }
 
 //====================================
@@ -177,6 +187,7 @@ void drawMesh() {
   glDrawArrays(GL_POINTS, 0, N_LENGTH * N_WIDE + 2);
 
   // testing drawing meshes
+  glUseProgram(program[PROG_CLOTH]);
   glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ground->ssbo_pos);
 
   // Tell the GPU where the indices are: in the index buffer
@@ -185,7 +196,7 @@ void drawMesh() {
   // Draw the elements.
 
   // but can't do GL_TRIANGLES?
-  glDrawElements(GL_POINTS, ground->indicesTris.size(), GL_UNSIGNED_INT, 0);
+  glDrawElements(GL_TRIANGLES, ground->indicesTris.size(), GL_UNSIGNED_INT, 0);
   // end test
 
   glPointSize(1.0f);
@@ -237,6 +248,11 @@ void updateCamera() {
 
 	GLint location;
 	if ((location = glGetUniformLocation(program[PROG_PLANET], "u_projMatrix")) != -1) {
+		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
+	}
+
+	glUseProgram(program[PROG_CLOTH]);
+	if ((location = glGetUniformLocation(program[PROG_CLOTH], "u_projMatrix")) != -1) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
 	}
 }

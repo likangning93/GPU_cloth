@@ -24,7 +24,8 @@ GLuint planetIBO = 0;
 GLuint displayImage;
 GLuint program[2];
 
-const unsigned int PROG_PLANET = 0;
+const unsigned int PROG_PLANET = 0; // program for renderign planets. holdover from nbody
+const unsigned int PROG_CLOTH = 1; // program for rendering cloth
 
 const float fovy = (float) (PI / 4);
 const float zNear = 0.10f;
