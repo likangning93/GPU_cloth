@@ -11,10 +11,10 @@ const float K = 0.9;
 const float N = 2.0; // number of times to project
 
 layout(std430, binding = 0) readonly buffer _Pos {
-    vec3 Pos[];
+    vec4 Pos[];
 };
 layout(std430, binding = 1) buffer _pPos {
-    vec3 pPos[];
+    vec4 pPos[];
 };
 layout(std430, binding = 2) buffer _Constraints {
     vec3 Constraints[];
@@ -38,8 +38,8 @@ void main() {
     }
 
     // "prefetch?"
-    vec3 targPos = pPos[targetIdx];
-    vec3 influencePos = pPos[influenceIdx];
+    vec3 targPos = pPos[targetIdx].xyz;
+    vec3 influencePos = pPos[influenceIdx].xyz;
 
     if (targetIdx == influenceIdx) { // case of a pin
         pPos[targetIdx] = Pos[targetIdx];
@@ -54,6 +54,6 @@ void main() {
 
     float k_prime = 1.0 - pow(1.0 - K, 1.0 / N);
 
-    pPos[targetIdx] += k_prime * dp1;
+    pPos[targetIdx] += vec4(k_prime * dp1, 1.0);
 
 }

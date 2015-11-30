@@ -8,13 +8,13 @@
 #define DT 0.2
 
 layout(std430, binding = 0) readonly buffer _Vel {
-    vec3 Vel[];
+    vec4 Vel[];
 };
 layout(std430, binding = 1) readonly buffer _Pos {
-    vec3 Pos[];
+    vec4 Pos[];
 };
 layout(std430, binding = 2) buffer _pPos { // predicted position
-    vec3 pPos[];
+    vec4 pPos[];
 };
 
 layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1) in;
