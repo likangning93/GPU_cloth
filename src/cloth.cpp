@@ -3,6 +3,7 @@
 
 Cloth::Cloth(string filename) : Mesh(filename) {
   glGenBuffers(1, &ssbo_vel);
+  glGenBuffers(1, &ssbo_pos_pred);
   generateConstraints();
 }
 
@@ -101,7 +102,7 @@ void Cloth::generateConstraints() {
         glm::vec3 p1 = initPositions.at(i);
         glm::vec3 p2 = initPositions.at(i);
         shaderConstraint[2] = glm::length(p1 - p2);
-        constraints[j].push_back(shaderConstraint);
+		internalConstraints[j].push_back(shaderConstraint);
       }
     }
   }
@@ -110,12 +111,11 @@ void Cloth::generateConstraints() {
 
   for (int i = 0; i < 4; i++) {
     // gen buffer
-    glGenBuffers(1, &ssbo_constraints[i]);
-	checkGLError("init cloths");
+	glGenBuffers(1, &ssbo_internalConstraints[i]);
 
     // allocate space for constraints on GPU
-    int numConstraints = constraints[i].size();
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_constraints[i]);
+	int numConstraints = internalConstraints[i].size();
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_internalConstraints[i]);
     glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec3),
       NULL, GL_STREAM_COPY);
 
@@ -124,8 +124,30 @@ void Cloth::generateConstraints() {
       0, numConstraints * sizeof(glm::vec3), bufMask);
 
     for (int j = 0; j < numConstraints; j++) {
-      constraintsMapped[j] = constraints[i].at(j);
+		constraintsMapped[j] = internalConstraints[i].at(j);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   }
+
+  glGenBuffers(1, &ssbo_collisionConstraints);
 }
+
+void Cloth::uploadAllConstraints() {
+	GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
+
+	// allocate space for constraints on GPU
+	int numConstraints = externalConstraints.size();
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_collisionConstraints);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec3),
+		NULL, GL_STREAM_COPY);
+
+	// transfer
+	glm::vec3 *constraintsMapped = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+		0, numConstraints * sizeof(glm::vec3), bufMask);
+
+	for (int j = 0; j < numConstraints; j++) {
+		constraintsMapped[j] = externalConstraints.at(j);
+	}
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+}
+

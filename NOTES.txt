@@ -4,9 +4,30 @@
 
 TODO
 -get meshes drawing [done, I think]
--strip out old code for generating meshes and constraints -> correction: add a "simualtion" class
--get meshes importing drawing -> correciton: add a "simulation" class
--pbd shader
+-strip out old code for generating meshes and constraints -> correction: add a "simualtion" class [done]
+-get meshes importing drawing -> correciton: add a "simulation" class [done]
+-pbd shaders
+	-external forces
+	-damp velocities (something basic for now)
+	-predict positions
+	-project constraints (however many times)
+
+	ScalarType k_prime = 1 - std::pow(1-*(m_p_pbd_stiffness), 1.0/ns); // just like in Muller eh?
+
+	EigenVector3 p1 = x.block_vector(m_p1);
+	EigenVector3 p2 = x.block_vector(m_p2);
+
+	ScalarType dist = (p1 - p2).norm();
+
+	ScalarType w = 0.5f; // is this okay? it's w1 / (w1 + w2), but w1 == w2 right?
+
+	EigenVector3 dp1 = -w * (dist - m_rest_length) * (p1 - p2) / dist;
+	EigenVector3 dp2 = -1.0f * dp1;
+
+	x.block_vector(m_p1) += k_prime * dp1;
+	x.block_vector(m_p2) += k_prime * dp2;
+
+	-update positions and velocities
 -pbd pipeline
 
 11/28/2015
