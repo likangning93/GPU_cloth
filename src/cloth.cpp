@@ -2,8 +2,34 @@
 #include "checkGLError.hpp"
 
 Cloth::Cloth(string filename) : Mesh(filename) {
+	
+  GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
+  int positionCount = initPositions.size();
+
   glGenBuffers(1, &ssbo_vel);
   glGenBuffers(1, &ssbo_pos_pred);
+
+
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vel);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
+	  NULL, GL_STREAM_COPY);
+  glm::vec4 *pos4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+	  0, positionCount * sizeof(glm::vec4), bufMask);
+  for (int i = 0; i < positionCount; i++) {
+	  pos4[i] = glm::vec4(initPositions[i], 1.0);
+  }
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos_pred);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
+	  NULL, GL_STREAM_COPY);
+  pos4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+	  0, positionCount * sizeof(glm::vec4), bufMask);
+  for (int i = 0; i < positionCount; i++) {
+	  pos4[i] = glm::vec4(0.0);
+  }
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
   generateConstraints();
 }
 
@@ -143,11 +169,10 @@ void Cloth::generateConstraints() {
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
-  // make some fake external constraints for now. unfortunately we need 400 of them to get anywhere.
-  // gen buffer
+  // make some fake external constraints for now
   glm::vec3 bogus3 = glm::vec3(-1.0f);
   externalConstraints.push_back(glm::vec3(0.0)); // testing pin. TODO: test
-  for (int i = 0; i < 399; i++) {
+  for (int i = 0; i < numVertices; i++) {
 	  externalConstraints.push_back(bogus3);
   }
   

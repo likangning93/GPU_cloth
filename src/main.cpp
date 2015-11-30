@@ -164,10 +164,10 @@ void mainLoop() {
         glfwSetWindowTitle(window, ss.str().c_str());
 
         sim->stepSimulation();
+		checkGLError("sim");
 
 #if VISUALIZE
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		glBindVertexArray(planetVAO);
 
 		// draw all the meshes
 		for (int i = 0; i < sim->numRigids; i++) {
@@ -185,18 +185,18 @@ void mainLoop() {
 }
 
 void drawMesh(Mesh *drawMe) {
-  // testing drawing meshes
+
   glUseProgram(program[PROG_CLOTH]);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, drawMe->ssbo_pos);
+  glBindVertexArray(planetVAO);
 
   // Tell the GPU where the indices are: in the index buffer
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawMe->idxbo);
-  checkGLError("visualize");
+
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, drawMe->ssbo_pos);
 
   // Draw the elements.
 
   glDrawElements(GL_TRIANGLES, drawMe->indicesTris.size(), GL_UNSIGNED_INT, 0);
-  checkGLError("visualize");
 
   checkGLError("visualize");
 }
