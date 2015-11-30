@@ -2,6 +2,13 @@
 -so there's something wrong with drawing imported meshes right now
 -I STRONGLY suspect it's the geometry shader
 
+TODO
+-get meshes drawing [done, I think]
+-strip out old code for generating meshes and constraints -> correction: add a "simualtion" class
+-get meshes importing drawing -> correciton: add a "simulation" class
+-pbd shader
+-pbd pipeline
+
 11/28/2015
 -post Thanksgiving!
 -took a look at PBD paper, b/c Harmony suggested implementing PBD instead

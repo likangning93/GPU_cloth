@@ -6,9 +6,8 @@
  * @copyright University of Pennsylvania
  */
 #include "main.hpp"
-#include "nbody.hpp"
+#include "simulation.hpp"
 #include "checkGLError.hpp"
-#include "mesh.hpp"
 
 // ================
 // Configuration
@@ -18,7 +17,7 @@
 
 const float DT = 0.2f;
 
-Mesh *ground = NULL;
+Simulation *sim = NULL;
 
 /**
  * C main function.
@@ -84,12 +83,6 @@ bool init(int argc, char **argv) {
     glVertexAttribPointer((GLuint) attr_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindVertexArray(0);
 
-    // Initialize n-body simulation
-    
-	initComputeProgs();
-
-	initSimulation();
-
 	glm::vec3 cameraPosition;
 	cameraPosition.x = zoom * sin(phi) * sin(theta);
 	cameraPosition.z = zoom * cos(theta);
@@ -102,10 +95,18 @@ bool init(int argc, char **argv) {
 
     initShaders(program);
 
+	// Initialize simulation
+	std::vector<string> colliders;
+	colliders.push_back("meshes/floor.obj");
+	colliders.push_back("meshes/floor.obj");
+
+	std::vector<string> cloths;
+	cloths.push_back("meshes/20x20cloth_falling.obj");
+
+	sim = new Simulation(colliders, cloths);
+	checkGLError("init sim");
 
     glEnable(GL_DEPTH_TEST);
-
-	ground = new Mesh("meshes/floor.obj"); // testing importing obj
 
     return true;
 }
@@ -166,44 +167,38 @@ void mainLoop() {
         //stepSimulation();
 
 #if VISUALIZE
-        drawMesh();
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		glBindVertexArray(planetVAO);
+
+		// draw all the meshes
+		for (int i = 0; i < sim->numRigids; i++) {
+			drawMesh(sim->rigids.at(i));
+		}
+		for (int i = 0; i < sim->numCloths; i++) {
+			drawMesh(sim->cloths.at(i));
+		}
+		glfwSwapBuffers(window);
+
 #endif
     }
     glfwDestroyWindow(window);
     glfwTerminate();
 }
 
-void drawMesh() {
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-  glPointSize(2.0f);
-
-  glUseProgram(program[PROG_PLANET]);
-
-  glBindVertexArray(planetVAO);
-
-  GLuint ssbo = getSSBOPosition();
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ssbo);
-
-  glDrawArrays(GL_POINTS, 0, N_LENGTH * N_WIDE + 2);
-
+void drawMesh(Mesh *drawMe) {
   // testing drawing meshes
   glUseProgram(program[PROG_CLOTH]);
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, ground->ssbo_pos);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, drawMe->ssbo_pos);
 
   // Tell the GPU where the indices are: in the index buffer
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ground->idxbo);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawMe->idxbo);
+  checkGLError("visualize");
 
   // Draw the elements.
 
-  // but can't do GL_TRIANGLES?
-  glDrawElements(GL_TRIANGLES, ground->indicesTris.size(), GL_UNSIGNED_INT, 0);
-  // end test
+  glDrawElements(GL_TRIANGLES, drawMe->indicesTris.size(), GL_UNSIGNED_INT, 0);
+  checkGLError("visualize");
 
-  glPointSize(1.0f);
-  glUseProgram(0);
-  glBindVertexArray(0);
-
-  glfwSwapBuffers(window);
   checkGLError("visualize");
 }
 

@@ -11,6 +11,8 @@ set(SOURCE_FILES
     "rbody.cpp"
     "mesh.hpp"
     "mesh.cpp"
+    "simulation.hpp"
+    "simulation.cpp"
     )
 
 add_library(src

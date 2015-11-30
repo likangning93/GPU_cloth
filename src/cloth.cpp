@@ -1,4 +1,5 @@
 #include "cloth.hpp"
+#include "checkGLError.hpp"
 
 Cloth::Cloth(string filename) : Mesh(filename) {
   glGenBuffers(1, &ssbo_vel);
@@ -15,7 +16,7 @@ struct constraintVertexIndices {
   int indices[4];
 };
 
-void addConstraint(constraintVertexIndices vert1, constraintVertexIndices vert2) {
+void addConstraint(constraintVertexIndices &vert1, constraintVertexIndices &vert2) {
   // assess whether the constraints given already exist here or not
   for (int i = 0; i < 4; i++) {
     if (vert1.indices[i] == vert2.thisIndex) {
@@ -110,6 +111,7 @@ void Cloth::generateConstraints() {
   for (int i = 0; i < 4; i++) {
     // gen buffer
     glGenBuffers(1, &ssbo_constraints[i]);
+	checkGLError("init cloths");
 
     // allocate space for constraints on GPU
     int numConstraints = constraints[i].size();
