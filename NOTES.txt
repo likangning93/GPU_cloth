@@ -1,3 +1,11 @@
+11/30/2015
+TODO
+-fix upload constraints [needs testing]
+-modify ppd constraint shader to do pins [needs testing]
+-link up the shaders [needs testing]
+-test test test
+-if there's time: mesh collision step?
+
 11/29/2015
 -so there's something wrong with drawing imported meshes right now
 -I STRONGLY suspect it's the geometry shader
@@ -6,7 +14,7 @@ TODO
 -get meshes drawing [done, I think]
 -strip out old code for generating meshes and constraints -> correction: add a "simualtion" class [done]
 -get meshes importing drawing -> correciton: add a "simulation" class [done]
--pbd shaders
+-pbd shaders [done, needs testing]
 	-external forces
 	-damp velocities (something basic for now)
 	-predict positions

@@ -10,10 +10,13 @@ const float K = 0.9;
 
 const float N = 2.0; // number of times to project
 
-layout(std430, binding = 0) buffer _pPos {
+layout(std430, binding = 0) readonly buffer _Pos {
+    vec3 Pos[];
+};
+layout(std430, binding = 1) buffer _pPos {
     vec3 pPos[];
 };
-layout(std430, binding = 1) buffer _Constraints {
+layout(std430, binding = 2) buffer _Constraints {
     vec3 Constraints[];
 };
 
@@ -27,10 +30,21 @@ void main() {
     // compute force contribution from this constraint
     vec3 constraint = Constraints[idx];
     
-    uint targetIdx = int(constraint.x); // index of "target" -> the position to be modified
-    uint influenceIdx = int(constraint.y); // index of "influencer" -> the particle doing the pulling
-    vec3 targPos = Pos[targetIdx];
-    vec3 influencePos = Pos[influenceIdx];
+    int targetIdx = int(constraint.x); // index of "target" -> the position to be modified
+    int influenceIdx = int(constraint.y); // index of "influencer" -> the particle doing the pulling
+
+    if (targetIdx == -1 || influenceIdx == -1) { // bogus influence
+        return;
+    }
+
+    // "prefetch?"
+    vec3 targPos = pPos[targetIdx];
+    vec3 influencePos = pPos[influenceIdx];
+
+    if (targetIdx == influenceIdx) { // case of a pin
+        pPos[targetIdx] = Pos[targetIdx];
+        return;
+    }
 
     vec3 diff = influencePos - targPos;
     float dist = length(diff);
@@ -40,6 +54,6 @@ void main() {
 
     float k_prime = 1.0 - pow(1.0 - K, 1.0 / N);
 
-    pPos[idx] += k_prime * dp1;
+    pPos[targetIdx] += k_prime * dp1;
 
 }

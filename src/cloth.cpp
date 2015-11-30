@@ -129,17 +129,52 @@ void Cloth::generateConstraints() {
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   }
 
+  // make space for collision constraints. these are per-vertex
   glGenBuffers(1, &ssbo_collisionConstraints);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, numVertices * sizeof(glm::vec4),
+	  NULL, GL_STREAM_COPY);
+  // transfer bogus
+  // collision constraints are (position vec3, bogusness)
+  glm::vec4 *constraintsMapped4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+	  0, numVertices * sizeof(glm::vec4), bufMask);
+  glm::vec4 bogus = glm::vec4(-1.0f);
+  for (int j = 0; j < numVertices; j++) {
+	  constraintsMapped4[j] = bogus;
+  }
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+  // make some fake external constraints for now. unfortunately we need 400 of them to get anywhere.
+  // gen buffer
+  glm::vec3 bogus3 = glm::vec3(-1.0f);
+  externalConstraints.push_back(glm::vec3(0.0)); // testing pin. TODO: test
+  for (int i = 0; i < 399; i++) {
+	  externalConstraints.push_back(bogus3);
+  }
+  
+  glGenBuffers(1, &ssbo_externalConstraints);
+
+  // allocate space for pin constraints on GPU
+  int numExternalConstraints = externalConstraints.size();
+
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_externalConstraints);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, numExternalConstraints * sizeof(glm::vec3),
+	  NULL, GL_STREAM_COPY);
+
+  // transfer
+  glm::vec3 *externalConstraintsMapped = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+	  0, numExternalConstraints * sizeof(glm::vec3), bufMask);
+
+  for (int j = 0; j < numExternalConstraints; j++) {
+	  externalConstraintsMapped[j] = externalConstraints.at(j);
+  }
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
-void Cloth::uploadAllConstraints() {
+void Cloth::uploadExternalConstraints() {
 	GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
 
 	// allocate space for constraints on GPU
 	int numConstraints = externalConstraints.size();
-	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_collisionConstraints);
-	glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec3),
-		NULL, GL_STREAM_COPY);
 
 	// transfer
 	glm::vec3 *constraintsMapped = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,

@@ -98,7 +98,6 @@ bool init(int argc, char **argv) {
 	// Initialize simulation
 	std::vector<string> colliders;
 	colliders.push_back("meshes/floor.obj");
-	colliders.push_back("meshes/floor.obj");
 
 	std::vector<string> cloths;
 	cloths.push_back("meshes/20x20cloth_falling.obj");
@@ -164,7 +163,7 @@ void mainLoop() {
         ss << " fps] " << deviceName;
         glfwSetWindowTitle(window, ss.str().c_str());
 
-        //stepSimulation();
+        sim->stepSimulation();
 
 #if VISUALIZE
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);

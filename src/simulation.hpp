@@ -18,13 +18,18 @@ public:
 	int numRigids;
 	int numCloths;
 
+	int projectTimes = 2;
+
 	GLuint unif_numPoints;
 	GLuint ssbo_addtl_constraints;
 
-	GLuint prog_externalForces;
-	GLuint prog_internalForces;
-	GLuint prog_velpos;
+	GLuint prog_ppd1_externalForces;
+	GLuint prog_ppd2_dampVelocity;
+	GLuint prog_ppd3_predictPositions;
+	GLuint prog_ppd4_projectClothConstraints;
+	GLuint prog_ppd6_updateVelPos;
 
 	void initComputeProgs();
+	void stepSingleCloth(Cloth *cloth);
 	void stepSimulation();
 };

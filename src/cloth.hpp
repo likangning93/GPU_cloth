@@ -14,6 +14,7 @@ public:
   GLuint ssbo_vel; // shader storage buffer object -> holds velocities
 
   GLuint ssbo_internalConstraints[4];
+  GLuint ssbo_externalConstraints;
 
   GLuint ssbo_collisionConstraints;
 
@@ -23,7 +24,7 @@ public:
 
   Cloth(string filename);
   ~Cloth();
-  void uploadAllConstraints(); // upload all determined constraints.
+  void uploadExternalConstraints(); // upload all determined constraints.
 
 private:
   void generateConstraints();
