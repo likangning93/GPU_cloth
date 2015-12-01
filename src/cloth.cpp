@@ -155,15 +155,15 @@ void Cloth::generateConstraints() {
     // allocate space for constraints on GPU
 	int numConstraints = internalConstraints[i].size();
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_internalConstraints[i]);
-    glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec3),
+    glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec4),
       NULL, GL_STREAM_COPY);
 
     // transfer
-    glm::vec3 *constraintsMapped = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
-      0, numConstraints * sizeof(glm::vec3), bufMask);
+    glm::vec4 *constraintsMapped = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+      0, numConstraints * sizeof(glm::vec4), bufMask);
 
     for (int j = 0; j < numConstraints; j++) {
-		constraintsMapped[j] = internalConstraints[i].at(j);
+		constraintsMapped[j] = glm::vec4(internalConstraints[i].at(j), 0.0);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   }
@@ -213,7 +213,7 @@ void Cloth::uploadExternalConstraints() {
 
 	// allocate space for constraints on GPU
 	int numConstraints = externalConstraints.size();
-
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_externalConstraints);
 	// transfer
 	glm::vec3 *constraintsMapped = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 		0, numConstraints * sizeof(glm::vec3), bufMask);

@@ -129,7 +129,6 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred2);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred1);
 		glDispatchCompute(workGroupCount_vertices, 1, 1);
-
 	}
 	
 	// project pin constraints
@@ -149,6 +148,18 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2); // no ffwd
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
+
+	// test getting something back from the GPU. can we even do this?!
+	//GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
+	//
+	//glm::vec4 retrievedPositions[9];
+	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, cloth->ssbo_pos);
+	//glm::vec4 *constraintsMapped = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+	//	0, 9 * sizeof(glm::vec4), bufMask);
+	//for (int i = 0; i < 9; i++) {
+	//	retrievedPositions[i] = constraintsMapped[i];
+	//}
+	//checkGLError("backcopy");
 }
 
 void Simulation::stepSimulation() {
