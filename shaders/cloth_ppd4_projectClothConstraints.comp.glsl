@@ -41,7 +41,7 @@ void main() {
     }
 
     // "prefetch?"
-    vec3 targPos = pPos1[targetIdx].xyz;
+    vec3 targPos = pPos2[targetIdx].xyz;
     vec3 influencePos = pPos1[influenceIdx].xyz;
 
     if (targetIdx == influenceIdx) { // case of a pin

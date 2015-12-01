@@ -28,6 +28,7 @@ public:
 	GLuint prog_ppd3_predictPositions;
 	GLuint prog_ppd4_projectClothConstraints;
 	GLuint prog_ppd6_updateVelPos;
+	GLuint prog_copyBuffer; // TODO: lol
 
 	void initComputeProgs();
 	void stepSingleCloth(Cloth *cloth);

@@ -77,6 +77,7 @@ void Simulation::initComputeProgs() {
 	prog_ppd3_predictPositions = initComputeProg("../shaders/cloth_ppd3_predictPositions.comp.glsl");
 	prog_ppd4_projectClothConstraints = initComputeProg("../shaders/cloth_ppd4_projectClothConstraints.comp.glsl");
 	prog_ppd6_updateVelPos = initComputeProg("../shaders/cloth_ppd6_updatePositionsVelocities.comp.glsl");
+	prog_copyBuffer = initComputeProg("../shaders/copy.comp.glsl");
 }
 
 void Simulation::stepSingleCloth(Cloth *cloth) {
@@ -100,12 +101,14 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_vel);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred1);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_pos_pred2);
+
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	
 	
 	/* project cloth constraints N times */
-	glUseProgram(prog_ppd4_projectClothConstraints);
 	for (int i = 0; i < projectTimes; i++) {
+		glUseProgram(prog_ppd4_projectClothConstraints);
 		// project each of the 4 internal constraints
 		// bind positions input
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
@@ -113,28 +116,38 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred1);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2);
 
-		for (int j = 3; j < 4; j++) {
+		for (int j = 0; j < 4; j++) {
 			// bind inner constraints
-			int workGroupCountInnerConstraints = cloth->internalConstraints[j].size();
+			int workGroupCountInnerConstraints = 
+				(cloth->internalConstraints[j].size() - 1) / WORK_GROUP_SIZE_ACC + 1;
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_internalConstraints[j]);
 			glDispatchCompute(workGroupCountInnerConstraints, 1, 1);
 		}
-		// ping-pong position buffers
-		GLuint temp = cloth->ssbo_pos_pred1;
-		cloth->ssbo_pos_pred1 = cloth->ssbo_pos_pred2;
-		cloth->ssbo_pos_pred2 = temp;
+		// ffwd pred1 to match pred2
+		
+		glUseProgram(prog_copyBuffer); // TODO: lol... THIS IS DUMB DO SOMETHING BETTER
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred2);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred1);
+		glDispatchCompute(workGroupCount_vertices, 1, 1);
+
 	}
-	// project pin constraints
-	int workGroupCountPinConstraints = cloth->externalConstraints.size();
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_externalConstraints);
-	glDispatchCompute(workGroupCountPinConstraints, 1, 1);
 	
+	// project pin constraints
+	glUseProgram(prog_ppd4_projectClothConstraints);
+
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
+	// bind predicted positions input/output
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred1);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2);
+	int workGroupCountPinConstraints = cloth->externalConstraints.size();
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_externalConstraints);
+	glDispatchCompute(workGroupCountPinConstraints, 1, 1);
 	
 	/* update positions and velocities */
 	glUseProgram(prog_ppd6_updateVelPos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_vel);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred1);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2); // no ffwd
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 }
 

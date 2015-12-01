@@ -13,13 +13,18 @@ layout(std430, binding = 0) readonly buffer _Vel {
 layout(std430, binding = 1) readonly buffer _Pos {
     vec4 Pos[];
 };
-layout(std430, binding = 2) buffer _pPos { // predicted position
-    vec4 pPos[];
+layout(std430, binding = 2) buffer _pPos1 { // predicted position
+    vec4 pPos1[];
+};
+layout(std430, binding = 3) buffer _pPos2 { // predicted position
+    vec4 pPos2[];
 };
 
 layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
     uint idx = gl_GlobalInvocationID.x;
-    pPos[idx] = Pos[idx] + Vel[idx] * DT;
+    vec3 prediction = Pos[idx].xyz + Vel[idx].xyz * DT;
+    pPos1[idx] = vec4(prediction, 1.0);
+    pPos2[idx] = vec4(prediction, 1.0);
 }

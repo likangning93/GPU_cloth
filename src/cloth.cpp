@@ -104,7 +104,8 @@ void Cloth::generateConstraints() {
    have, then distribute each vert's constraints into each of the 4 buffers.
    We'll do this by building 2 constraints for every edge given in a quadface.
    We don't actually NEED the N,S,E,W constraints to be uniform like this if
-   we ping-pong the predicted positions.
+   we have a predicted position lag (one buffer stays "one projection behind"
+   and has to be ffwded on the next step)
   *****************************************************************************/
   int numVertices = initPositions.size();
   std::vector<constraintVertexIndices> constraintsPerVertex;
@@ -184,7 +185,7 @@ void Cloth::generateConstraints() {
   // make some fake external constraints for now
   glm::vec3 bogus3 = glm::vec3(-1.0f);
   externalConstraints.push_back(glm::vec3(0.0)); // testing pin. TODO: test
-  for (int i = 0; i < numVertices; i++) {
+  for (int i = 1; i < numVertices; i++) {
 	  externalConstraints.push_back(bogus3);
   }
   

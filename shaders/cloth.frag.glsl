@@ -9,5 +9,5 @@ out vec4 fragColor;
 
 void main() {
 	vec3 up = vec3(0.0, 0.0, 1.0); // we live in a z-up world
-    fragColor = vec4(vec3(dot(up, normal)), 1.0);
+    fragColor = vec4(vec3(dot(up, normal) + 0.01), 1.0);
 }
