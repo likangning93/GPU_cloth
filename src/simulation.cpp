@@ -46,6 +46,7 @@ GLuint initComputeProg(const char *path) {
     cs_str = glslUtility::loadFile(path, cs_len);
 
 	printf(cs_str);
+	cout << endl;
 
     glShaderSource(cs, 1, &cs_str, &cs_len);
 
@@ -149,17 +150,27 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2); // no ffwd
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 
+	//retrieveBuffer(cloth->ssbo_pos, 5);
+}
+
+void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {
 	// test getting something back from the GPU. can we even do this?!
-	//GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
-	//
-	//glm::vec4 retrievedPositions[9];
-	//glBindBuffer(GL_SHADER_STORAGE_BUFFER, cloth->ssbo_pos);
-	//glm::vec4 *constraintsMapped = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
-	//	0, 9 * sizeof(glm::vec4), bufMask);
-	//for (int i = 0; i < 9; i++) {
-	//	retrievedPositions[i] = constraintsMapped[i];
-	//}
-	//checkGLError("backcopy");
+	GLint bufMask = GL_MAP_READ_BIT;
+	
+	std::vector<glm::vec4> positions;
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo);
+	glm::vec4 *constraintsMapped = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+		0, numItems * sizeof(glm::vec4), bufMask);
+	for (int i = 0; i < numItems; i++) {
+		positions.push_back(glm::vec4(constraintsMapped[i]));
+	}
+	checkGLError("backcopy");
+
+	for (int i = 0; i < numItems; i++) {
+		cout << positions.at(i).z << " ";
+	}
+	cout << endl;
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
 void Simulation::stepSimulation() {

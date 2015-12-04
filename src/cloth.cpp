@@ -163,7 +163,7 @@ void Cloth::generateConstraints() {
       0, numConstraints * sizeof(glm::vec4), bufMask);
 
     for (int j = 0; j < numConstraints; j++) {
-		constraintsMapped[j] = glm::vec4(internalConstraints[i].at(j), 0.0);
+		constraintsMapped[j] = glm::vec4(internalConstraints[i].at(j), 1.0);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   }

@@ -1,3 +1,31 @@
+12/04/2015
+
+TODO
+-simplify pipeline. eyeball debug.
+	-can we merge damp velocities and predict positions? -> except damp velocities could end up quite complex. so not yet.
+	-RENAME THINGS RIGHT
+
+-debug simulation stability
+	-why is there still instability with no constraint projection? numerical error?
+	-hmmm... was doing v = v + f instead of v = v + f * dt. seems a little better.
+
+-do proper damping
+	-may need to look at and implement scan algorithm
+	-assess the CPU version w/out damping. does that solve our stability problem?
+	-doesn't look like damping is the source of instability
+
+-add obj checking and constraint generation
+-ask Kai about suggestions on animation import formats
+	-bvh + obj + skin weights? autoskin in the app if can't export weights?
+		-also, writing a bvh player won't be easy
+	-borrow from the current 462 bvh player?
+	-something like obj sequence or baked fbx isn't good, too slow to load each frame
+
+12/01/2015
+-so the vec4 thing is part of std430: buffers are always treated as vec4s, although you can interpret as vec3s in the shader -> thanks Kai!
+-we can get things back from the GPU! all about the bufMask. see the writeup -> thanks Kai!
+-
+
 11/30/2015
 TODO
 -fix upload constraints [needs testing]

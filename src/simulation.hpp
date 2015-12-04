@@ -33,4 +33,6 @@ public:
 	void initComputeProgs();
 	void stepSingleCloth(Cloth *cloth);
 	void stepSimulation();
+
+	void retrieveBuffer(GLuint ssbo, int numItems);
 };
