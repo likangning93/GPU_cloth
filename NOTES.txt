@@ -1,13 +1,20 @@
+12/05/2015
+-add more cam/playback controls [done]
+-make constants in compute shaders into uniforms [done]
+-DEBUG THE SIMULATION
+-add naive mesh collision detect!
+
 12/04/2015
 
 TODO
--simplify pipeline. eyeball debug.
+-clean pipeline. eyeball debug.
 	-can we merge damp velocities and predict positions? -> except damp velocities could end up quite complex. so not yet.
 	-RENAME THINGS RIGHT
+	-make constants uniforms!
 
 -debug simulation stability
 	-why is there still instability with no constraint projection? numerical error?
-	-hmmm... was doing v = v + f instead of v = v + f * dt. seems a little better.
+	-hmmm... was doing v = v + f instead of v = v + f * dt. seems a little better. [done]
 
 -do proper damping
 	-may need to look at and implement scan algorithm

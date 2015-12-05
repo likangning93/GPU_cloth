@@ -97,7 +97,7 @@ bool init(int argc, char **argv) {
 
 	// Initialize simulation
 	std::vector<string> colliders;
-	//colliders.push_back("meshes/floor.obj");
+	colliders.push_back("meshes/floor.obj");
 
 	std::vector<string> cloths;
 	//cloths.push_back("meshes/floor.obj");
@@ -165,8 +165,10 @@ void mainLoop() {
         ss << " fps] " << deviceName;
         glfwSetWindowTitle(window, ss.str().c_str());
 
-        sim->stepSimulation();
-		checkGLError("sim");
+		if (!pause) {
+			sim->stepSimulation();
+			checkGLError("sim");
+		}
 
 #if VISUALIZE
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -211,23 +213,43 @@ void errorCallback(int error, const char *description) {
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
         glfwSetWindowShouldClose(window, GL_TRUE);
+		return;
     }
+	if (key == GLFW_KEY_SPACE && action == GLFW_PRESS) {
+		pause = !pause;
+		return;
+	}
 	if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
 		phi += 0.1f;
-		updateCamera();
 	}
 	if (key == GLFW_KEY_LEFT && action == GLFW_PRESS) {
 		phi -= 0.1f;
-		updateCamera();
 	}
 	if (key == GLFW_KEY_UP && action == GLFW_PRESS) {
 		theta -= 0.1f;
-		updateCamera();
 	}
 	if (key == GLFW_KEY_DOWN && action == GLFW_PRESS) {
 		theta += 0.1f;
-		updateCamera();
 	}
+	if (key == GLFW_KEY_W && action == GLFW_PRESS) {
+		lookAt.x += 0.5f;
+	}
+	if (key == GLFW_KEY_S && action == GLFW_PRESS) {
+		lookAt.x -= 0.5f;
+	}
+	if (key == GLFW_KEY_A && action == GLFW_PRESS) {
+		lookAt.y += 0.5f;
+	}
+	if (key == GLFW_KEY_D && action == GLFW_PRESS) {
+		lookAt.y -= 0.5f;
+	}
+	if (key == GLFW_KEY_Q && action == GLFW_PRESS) {
+		lookAt.z -= 0.5f;
+	}
+	if (key == GLFW_KEY_E && action == GLFW_PRESS) {
+		lookAt.z += 0.5f;
+	}
+	updateCamera();
 }
 
 void updateCamera() {
@@ -235,11 +257,12 @@ void updateCamera() {
 	cameraPosition.x = zoom * sin(phi) * sin(theta);
 	cameraPosition.z = zoom * cos(theta);
 	cameraPosition.y = zoom * cos(phi) * sin(theta);
+	cameraPosition += lookAt;
 
 	int width = 1280;
 	int height = 720;
 	projection = glm::perspective(fovy, float(width) / float(height), zNear, zFar);
-	glm::mat4 view = glm::lookAt(cameraPosition, glm::vec3(0), glm::vec3(0, 0, 1));
+	glm::mat4 view = glm::lookAt(cameraPosition, lookAt, glm::vec3(0, 0, 1));
 	projection = projection * view;
 	glUseProgram(program[PROG_PLANET]);
 

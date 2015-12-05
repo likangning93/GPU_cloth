@@ -6,9 +6,9 @@
 #define WORK_GROUP_SIZE_ACC 16
 
 // spring constant
-const float K = 0.9;
+layout(location = 0) uniform float K;
 
-const float N = 4.0; // number of times to project
+layout(location = 1) uniform float N; // number of times to project
 
 layout(std430, binding = 0) readonly buffer _Pos {
     vec4 Pos[];

@@ -74,10 +74,26 @@ GLuint initComputeProg(const char *path) {
 
 void Simulation::initComputeProgs() {
 	prog_ppd1_externalForces = initComputeProg("../shaders/cloth_ppd1_externalForces.comp.glsl");
+	glUseProgram(prog_ppd1_externalForces);
+	glm::vec3 G = glm::vec3(0.0f, 0.0f, -0.98f);
+	glUniform3fv(1, 1, &G[0]);
+	glUniform1f(0, 0.016f);
+
 	prog_ppd2_dampVelocity = initComputeProg("../shaders/cloth_ppd2_dampVelocities.comp.glsl");
+
 	prog_ppd3_predictPositions = initComputeProg("../shaders/cloth_ppd3_predictPositions.comp.glsl");
+	glUseProgram(prog_ppd3_predictPositions);
+	glUniform1f(0, 0.016f);
+
 	prog_ppd4_projectClothConstraints = initComputeProg("../shaders/cloth_ppd4_projectClothConstraints.comp.glsl");
+	glUseProgram(prog_ppd4_projectClothConstraints);
+	glUniform1f(0, 0.9f);
+	glUniform1f(1, 4.0f);
+
 	prog_ppd6_updateVelPos = initComputeProg("../shaders/cloth_ppd6_updatePositionsVelocities.comp.glsl");
+	glUseProgram(prog_ppd6_updateVelPos);
+	glUniform1f(0, 0.016f);
+	
 	prog_copyBuffer = initComputeProg("../shaders/copy.comp.glsl");
 }
 

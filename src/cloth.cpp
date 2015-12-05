@@ -185,6 +185,8 @@ void Cloth::generateConstraints() {
   // make some fake external constraints for now
   glm::vec3 bogus3 = glm::vec3(-1.0f);
   externalConstraints.push_back(glm::vec3(0.0)); // testing pin. TODO: test
+  //externalConstraints.push_back(glm::vec3(20.0, 20.0, 0.0)); // testing pin. TODO: test
+
   for (int i = 1; i < numVertices; i++) {
 	  externalConstraints.push_back(bogus3);
   }

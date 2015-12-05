@@ -5,9 +5,7 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_ACC 16
 
-#define DT 0.016
-
-// spring constant
+layout(location = 0) uniform float DT;
 
 layout(std430, binding = 0) buffer _Vel { // velocities
     vec4 Vel[];

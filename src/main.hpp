@@ -36,6 +36,9 @@ glm::mat4 projection;
 float theta = 1.22f;
 float phi = -0.65f;
 float zoom = 5.0f;
+glm::vec3 lookAt = glm::vec3(0.0f, 0.0f, 0.0f);
+
+bool pause = true;
 
 //====================================
 // Main

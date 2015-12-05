@@ -5,7 +5,7 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_VELPOS 16
 
-#define DT 0.016
+layout(location = 0) uniform float DT;
 
 layout(std430, binding = 0) readonly buffer _Vel {
     vec4 Vel[];
