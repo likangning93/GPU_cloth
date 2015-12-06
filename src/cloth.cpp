@@ -10,37 +10,40 @@ Cloth::Cloth(string filename) : Mesh(filename) {
   glGenBuffers(1, &ssbo_pos_pred1);
   glGenBuffers(1, &ssbo_pos_pred2);
 
-
+  // set up ssbo for velocities
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vel);
   glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
 	  NULL, GL_STREAM_COPY);
-  glm::vec4 *pos4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+  glm::vec4 *velocity = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 	  0, positionCount * sizeof(glm::vec4), bufMask);
   for (int i = 0; i < positionCount; i++) {
-	  pos4[i] = glm::vec4(0.0);
+	  velocity[i] = glm::vec4(0.0);
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
+  // set up ssbo for predicted positions
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos_pred1);
   glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
 	  NULL, GL_STREAM_COPY);
-  pos4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+  glm::vec4 *ppos1 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 	  0, positionCount * sizeof(glm::vec4), bufMask);
   for (int i = 0; i < positionCount; i++) {
-	  pos4[i] = glm::vec4(0.0);
+	  ppos1[i] = glm::vec4(0.0);
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
+  // set up another ssbo for predicted positions. ping-pong
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos_pred2);
   glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
 	  NULL, GL_STREAM_COPY);
-  pos4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+  glm::vec4 *ppos2 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 	  0, positionCount * sizeof(glm::vec4), bufMask);
   for (int i = 0; i < positionCount; i++) {
-	  pos4[i] = glm::vec4(0.0);
+	  ppos2[i] = glm::vec4(0.0);
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
+  // set up constraints
   generateConstraints();
 }
 
@@ -120,8 +123,7 @@ void Cloth::generateConstraints() {
   }
   // Check every face and input the constraints per vertex.
   int numFaces = indicesQuads.size();
-  for (int i = 0; i < numFaces; i++) {
-    // each face generates 4 constraints
+  for (int i = 0; i < numFaces; i++) {    // each face generates 4 constraints
     glm::ivec4 face = indicesQuads.at(i);
     addConstraint(constraintsPerVertex[face[0]], constraintsPerVertex[face[1]]);
     addConstraint(constraintsPerVertex[face[1]], constraintsPerVertex[face[2]]);
@@ -138,6 +140,9 @@ void Cloth::generateConstraints() {
         glm::vec3 shaderConstraint;
         shaderConstraint[0] = currSet.thisIndex;
         shaderConstraint[1] = currSet.indices[j];
+		if (currSet.thisIndex == currSet.indices[j]) {
+			printf("glitch\n");
+		}
 		glm::vec3 p1 = initPositions.at(currSet.thisIndex);
 		glm::vec3 p2 = initPositions.at(currSet.indices[j]);
         shaderConstraint[2] = glm::length(p1 - p2);
@@ -163,51 +168,40 @@ void Cloth::generateConstraints() {
       0, numConstraints * sizeof(glm::vec4), bufMask);
 
     for (int j = 0; j < numConstraints; j++) {
-		constraintsMapped[j] = glm::vec4(internalConstraints[i].at(j), 1.0);
+		if (int(internalConstraints[i].at(j).x) == int(internalConstraints[i].at(j).y)) {
+			printf("fart");
+		}
+		constraintsMapped[j] = glm::vec4(internalConstraints[i].at(j), 0.0);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   }
 
   // make space for collision constraints. these are per-vertex
   glGenBuffers(1, &ssbo_collisionConstraints);
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_collisionConstraints);
   glBufferData(GL_SHADER_STORAGE_BUFFER, numVertices * sizeof(glm::vec4),
 	  NULL, GL_STREAM_COPY);
   // transfer bogus
   // collision constraints are (position vec3, bogusness)
-  glm::vec4 *constraintsMapped4 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+  glm::vec4 *constraintsMapped = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 	  0, numVertices * sizeof(glm::vec4), bufMask);
   glm::vec4 bogus = glm::vec4(-1.0f);
   for (int j = 0; j < numVertices; j++) {
-	  constraintsMapped4[j] = bogus;
+	  constraintsMapped[j] = bogus;
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
+  glGenBuffers(1, &ssbo_externalConstraints);
+  // buffer of external constraints. these are all bogus for now
+  for (int i = 0; i < numVertices; i++) {
+	  externalConstraints.push_back(bogus);
+  }
 
   // make some fake external constraints for now
-  glm::vec3 bogus3 = glm::vec3(-1.0f);
-  externalConstraints.push_back(glm::vec3(0.0)); // testing pin. TODO: test
-  //externalConstraints.push_back(glm::vec3(20.0, 20.0, 0.0)); // testing pin. TODO: test
-
-  for (int i = 1; i < numVertices; i++) {
-	  externalConstraints.push_back(bogus3);
-  }
-  
-  glGenBuffers(1, &ssbo_externalConstraints);
-
-  // allocate space for pin constraints on GPU
-  int numExternalConstraints = externalConstraints.size();
-
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_externalConstraints);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, numExternalConstraints * sizeof(glm::vec3),
-	  NULL, GL_STREAM_COPY);
+  //externalConstraints.at(0) = glm::vec4(0.0);
 
   // transfer
-  glm::vec3 *externalConstraintsMapped = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
-	  0, numExternalConstraints * sizeof(glm::vec3), bufMask);
-
-  for (int j = 0; j < numExternalConstraints; j++) {
-	  externalConstraintsMapped[j] = externalConstraints.at(j);
-  }
-  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+  uploadExternalConstraints();
 }
 
 void Cloth::uploadExternalConstraints() {
@@ -215,10 +209,14 @@ void Cloth::uploadExternalConstraints() {
 
 	// allocate space for constraints on GPU
 	int numConstraints = externalConstraints.size();
+
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_externalConstraints);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec4),
+		NULL, GL_STREAM_COPY);
+
 	// transfer
-	glm::vec3 *constraintsMapped = (glm::vec3 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
-		0, numConstraints * sizeof(glm::vec3), bufMask);
+	glm::vec4 *constraintsMapped = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+		0, numConstraints * sizeof(glm::vec4), bufMask);
 
 	for (int j = 0; j < numConstraints; j++) {
 		constraintsMapped[j] = externalConstraints.at(j);

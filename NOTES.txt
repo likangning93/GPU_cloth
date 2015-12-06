@@ -2,6 +2,12 @@
 -add more cam/playback controls [done]
 -make constants in compute shaders into uniforms [done]
 -DEBUG THE SIMULATION
+	-the 563 sim counts triangle edges as well. would this help with stability? -> removing them in 563 doesn't change that sim's stability
+	-increasing iterations per timestep improves stability to a point, but things still go crazy
+	-decreasing timestep doesn't help
+	-behavior changes significantly if I reverse the order in which the constraints are projected
+	-there's... a phantom pin?
+	-ok part of the stability problem: a whole internal constraint buffer was getting overwritten b/c forgot to bind another buffer later before uploading a bunch of bogus
 -add naive mesh collision detect!
 
 12/04/2015

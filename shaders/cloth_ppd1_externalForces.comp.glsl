@@ -5,13 +5,13 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_ACC 16
 
-// acceleration due to gravity
-layout(location = 0) uniform float DT;
-layout(location = 1) uniform vec3 F;
-
 layout(std430, binding = 0) buffer _Vel {
     vec4 Vel[];
 };
+
+// acceleration due to gravity
+layout(location = 0) uniform float DT;
+layout(location = 1) uniform vec3 F;
 
 layout(local_size_x = WORK_GROUP_SIZE_ACC, local_size_y = 1, local_size_z = 1) in;
 

@@ -5,8 +5,6 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_ACC 16
 
-layout(location = 0) uniform float DT;
-
 layout(std430, binding = 0) buffer _Vel { // velocities
     vec4 Vel[];
 };
@@ -16,6 +14,8 @@ layout(std430, binding = 1) buffer _Pos { // position in the last timestep
 layout(std430, binding = 2) readonly buffer _pPos { // corrected predicted positions
     vec4 pPos[];
 };
+
+layout(location = 0) uniform float DT;
 
 layout(local_size_x = WORK_GROUP_SIZE_ACC, local_size_y = 1, local_size_z = 1) in;
 

@@ -22,7 +22,7 @@ public:
 
   // these vec3 constraints are index, index, rest length
   std::vector<glm::vec3> internalConstraints[4];
-  std::vector<glm::vec3> externalConstraints; // pins
+  std::vector<glm::vec4> externalConstraints; // pins
 
   Cloth(string filename);
   ~Cloth();
