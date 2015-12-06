@@ -5,6 +5,8 @@
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_ACC 16
 
+layout(location = 2) uniform int numConstraints;
+
 layout(std430, binding = 0) readonly buffer _Pos {
     vec4 Pos[];
 };
@@ -30,8 +32,10 @@ void main() {
     //     gl_WorkGroupID * gl_WorkGroupSize + gl_LocalInvocationID.
     uint idx = gl_GlobalInvocationID.x;
 
+    if (idx >= numConstraints) return;
+
     // compute force contribution from this constraint
-    vec3 constraint = Constraints[idx].xyz; + vec3(0.01);
+    vec3 constraint = Constraints[idx].xyz;// + vec3(0.1);
     
     highp int targetIdx = int(constraint.x); // index of "target" -> the position to be modified
     highp int influenceIdx = int(constraint.y); // index of "influencer" -> the particle doing the pulling

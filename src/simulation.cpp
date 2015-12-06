@@ -137,6 +137,8 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 			// bind inner constraints
 			int workGroupCountInnerConstraints = 
 				(cloth->internalConstraints[j].size() - 1) / WORK_GROUP_SIZE_ACC + 1;
+			glUniform1i(2, workGroupCountInnerConstraints);
+
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_internalConstraints[j]);
 			// project this set of constraints
 			glDispatchCompute(workGroupCountInnerConstraints, 1, 1);
@@ -158,7 +160,8 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2);
 	int workGroupCountPinConstraints = cloth->externalConstraints.size();
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_externalConstraints);
-	//glDispatchCompute(workGroupCountPinConstraints, 1, 1);
+	glUniform1i(2, 1);
+	glDispatchCompute(workGroupCountPinConstraints, 1, 1);
 	
 	/* update positions and velocities */
 	glUseProgram(prog_ppd6_updateVelPos);
@@ -167,10 +170,10 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2); // no ffwd
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 
-	retrieveBuffer(cloth->ssbo_internalConstraints[0], 400);
-	retrieveBuffer(cloth->ssbo_internalConstraints[1], 400);
-	retrieveBuffer(cloth->ssbo_internalConstraints[2], 400);
-	retrieveBuffer(cloth->ssbo_internalConstraints[3], 300);
+	retrieveBuffer(cloth->ssbo_internalConstraints[0], 100);
+	retrieveBuffer(cloth->ssbo_internalConstraints[1], 100);
+	retrieveBuffer(cloth->ssbo_internalConstraints[2], 100);
+	retrieveBuffer(cloth->ssbo_internalConstraints[3], 100);
 
 }
 
