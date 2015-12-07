@@ -1,3 +1,68 @@
+12/07/2015
+
+TODO:
+-make all shaders aware of data amount (aka idx at which to do nothing and return)
+-change constraint format:
+	-neg length indicates a pin
+	-pin still has source and dest in the usual way
+	-rename in shader to be more clear
+-add an inverse mass buffer
+-add an "inverse mass update" shader that scans the pin constraints and updates the inverse masses
+-add a compute shader to do obj mesh animation using a matrix and a weight buffer
+-this way we can animate a mesh moving and pin things to it at least
+-add a shader for obj collision detect and collision constraint gen
+	-how does an obj collision constraint work? is it just another buffer of pin constraints? gets refreshed every frame? -> in this case it's a REALLY good idea to modify weights on the GPU
+	-but read the section in the paper. there should be... time
+	-how to do it with an animated mesh? just use the mesh's updated position? worth trying
+
+12/06/2015
+-keep debugging
+	-right now the cloth is "too stretchy"
+	-look at how attachment constraints SHOULD be handled?
+	-in 563 it was basically just moved back into place
+	-Muller suggests making the pinned position's inverse mass 0 so nothing can move it.
+		-so in a constraint, this will give the "other" item in the constraint a greater dp
+		-options:
+			-1 add a weight buffer, handle updating it w/constraints on the CPU
+			-2 add an "update weights" shader stage that runs per constraint and updates weights automatically
+			-no matter what we do, pin constraints on GPU must be updated by buffering it
+			-updating weights on CPU basically doubles number of things that must be sent to the GPU
+			-doing it on the GPU could lead to some "collisions" but we don't really care
+			-and it doesn't have to be run on every frame, unless we weight for friction constraints
+			-so let's do it in an additional shader stage. faster too if # pins is huge
+			-may need to change how pin constraints are done in general:
+				-pins may be fixed in space (init pos pins)
+				-but pins may also be attached to a mesh in the future
+				-let's use rest length as an indicator of "pin-ness" instead of index
+					-negative rest length == "this is a pin"
+					-and then the indices are just indices as always
+					-we'll pass in a POS buffer into the shader that can be used as a source for pinning
+						-this can either be an animated mesh's vertices or the cloth's own positions
+
+-get at least the framework for animated mesh collision in debuggable condition
+	-look at 277 skinning. implement something basic like that on compute shader
+	-just import a mesh with a single skeleton joint for now
+	-bvh can come later?
+
+	-mesh collision detect:
+		-so most basic idea is to check pPos vs prevPos as a line seg, check with every triangle
+		-but do we also need to assess per-vertex if the vertex is "inside" the mesh?
+			-would certainly be slow
+			-would also need to determine nearest mesh vertex, push in that direction
+			-maybe we can do a pair of collision detection shaders
+			-what it could do:
+				-raycast towards the predicted position
+				-if ISX coount is even, check for collision, generate constraint
+				-if ISX count is odd...
+					-find the nearest mesh vertex -> acceleratable
+					-push out?
+					-or push out along predicted position vector?
+
+		-other options: compute mesh AABBs? if the vertex is within one, push out? -> which dir?
+		-we can't compute this AABB on the GPU either, no float atomics
+
+-add support for raycasting pins? -> not yet
+
 12/05/2015
 -add more cam/playback controls [done]
 -make constants in compute shaders into uniforms [done]

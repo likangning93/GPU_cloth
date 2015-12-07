@@ -35,7 +35,7 @@ void main() {
     if (idx >= numConstraints) return;
 
     // compute force contribution from this constraint
-    vec3 constraint = Constraints[idx].xyz;// + vec3(0.1);
+    vec3 constraint = Constraints[idx].xyz;
     
     highp int targetIdx = int(constraint.x); // index of "target" -> the position to be modified
     highp int influenceIdx = int(constraint.y); // index of "influencer" -> the particle doing the pulling
@@ -46,6 +46,8 @@ void main() {
 
     // "prefetch?"
     vec3 targPos = pPos2[targetIdx].xyz;
+    float k_prime = 1.0 - pow(1.0 - K, 1.0 / N);
+
     vec3 influencePos = pPos1[influenceIdx].xyz;
 
     if (targetIdx == influenceIdx) { // case of a stationary pin
@@ -58,8 +60,6 @@ void main() {
     float w = 0.5f; // it's w1 / (w1 + w2), but w1 == w2 right?
 
     vec3 dp1 = w * (dist - constraint.z) * diff / dist; // force is towards influencer
-
-    float k_prime = 1.0 - pow(1.0 - K, 1.0 / N);
 
     pPos2[targetIdx] += vec4(k_prime * dp1, 1.0);
 

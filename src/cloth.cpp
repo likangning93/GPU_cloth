@@ -198,7 +198,8 @@ void Cloth::generateConstraints() {
   }
 
   // make some fake external constraints for now
-  //externalConstraints.at(0) = glm::vec4(0.0);
+  externalConstraints.at(0) = glm::vec4(0.0);
+  externalConstraints.at(1) = glm::vec4(40, 40, 0.0, 0.0);
 
   // transfer
   uploadExternalConstraints();

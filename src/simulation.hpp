@@ -18,9 +18,10 @@ public:
 	int numRigids;
 	int numCloths;
 
-	int projectTimes = 2;
+	int projectTimes = 10;
 	float timeStep = 0.016;
 	float K = 0.9f;
+	glm::vec3 Gravity = glm::vec3(0.0f, 0.0f, -0.98f);
 
 	GLuint unif_numPoints;
 	GLuint ssbo_addtl_constraints;
