@@ -80,6 +80,9 @@ void main() {
     uint idx = gl_GlobalInvocationID.x;
     if (idx >= numPositions) return;
 
+    // check if there's already a valid constraint. if so, do nothing
+    if (pClothCollisionConstraints[idx].w >= 0.0) return; 
+
     vec3 pos = pCloth1[idx].xyz;
 	vec3 lookAt = pCloth2[idx].xyz;
 
@@ -102,5 +105,6 @@ void main() {
     		collisionConstraint = vec4(norm, collisionT);
     	}
     }
+    if (collisionConstraint.w > 1.0 || collisionConstraint.w < 0.0) return; // collision is not between points over timestep
     pClothCollisionConstraints[idx] = collisionConstraint;
 }

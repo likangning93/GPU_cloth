@@ -97,7 +97,7 @@ bool init(int argc, char **argv) {
 
 	// Initialize simulation
 	std::vector<string> colliders;
-	//colliders.push_back("meshes/floor.obj");
+	colliders.push_back("meshes/floor.obj");
 
 	std::vector<string> cloths;
 	//cloths.push_back("meshes/floor.obj");

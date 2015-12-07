@@ -35,6 +35,7 @@ public:
 	GLuint prog_projectCollisionConstraints;
 
 	void initComputeProgs();
+	void genCollisionConstraints(Cloth *cloth, Rbody *rbody);
 	void stepSingleCloth(Cloth *cloth);
 	void stepSimulation();
 

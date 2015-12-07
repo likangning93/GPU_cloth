@@ -102,6 +102,21 @@ void Simulation::initComputeProgs() {
 	prog_projectCollisionConstraints = initComputeProg("../shaders/cloth_projectCollisions.comp.glsl");
 }
 
+void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
+	int numVertices = cloth->initPositions.size();
+	glUseProgram(prog_genCollisionConstraints);
+	glUniform1i(0, rbody->indicesTris.size() / 3);
+	glUniform1i(1, numVertices);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, rbody->ssbo_pos);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, rbody->ssbo_triangles);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, cloth->ssbo_collisionConstraints);
+	
+	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
+	glDispatchCompute(workGroupCount_vertices, 1, 1);
+}
+
 void Simulation::stepSingleCloth(Cloth *cloth) {
 	int numVertices = cloth->initPositions.size();
 	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
@@ -174,7 +189,18 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		glDispatchCompute(workGroupCount_vertices, 1, 1);
 	}
 	
-	
+	/* generate and resolve collision constraints */
+	for (int i = 0; i < numRigids; i++) {
+		genCollisionConstraints(cloth, rigids.at(i));
+	}
+	glUseProgram(prog_projectCollisionConstraints);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_collisionConstraints);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_vel);
+	glUniform1i(0, numVertices);
+	glDispatchCompute(workGroupCount_vertices, 1, 1);
+
 	/* update positions and velocities */
 	glUseProgram(prog_ppd7_updateVelPos);
 	glUniform1i(1, numVertices);
@@ -184,10 +210,10 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2); // no ffwd
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 
-	retrieveBuffer(cloth->ssbo_internalConstraints[0], 100);
-	retrieveBuffer(cloth->ssbo_internalConstraints[1], 100);
-	retrieveBuffer(cloth->ssbo_internalConstraints[2], 100);
-	retrieveBuffer(cloth->ssbo_internalConstraints[3], 100);
+	//retrieveBuffer(cloth->ssbo_internalConstraints[0], 100);
+	//retrieveBuffer(cloth->ssbo_internalConstraints[1], 100);
+	//retrieveBuffer(cloth->ssbo_internalConstraints[2], 100);
+	//retrieveBuffer(cloth->ssbo_internalConstraints[3], 100);
 
 }
 
