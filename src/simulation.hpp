@@ -21,10 +21,6 @@ public:
 	int projectTimes = 10;
 	float timeStep = 0.016;
 	glm::vec3 Gravity = glm::vec3(0.0f, 0.0f, -0.98f);
-	float M = 0.022f; // default mass for a cloth particle
-
-	GLuint unif_numPoints;
-	GLuint ssbo_addtl_constraints;
 
 	GLuint prog_ppd1_externalForces;
 	GLuint prog_ppd2_dampVelocity;
@@ -34,6 +30,9 @@ public:
 	GLuint prog_ppd6_projectClothConstraints;
 	GLuint prog_ppd7_updateVelPos;
 	GLuint prog_copyBuffer; // TODO: lol
+	
+	GLuint prog_genCollisionConstraints;
+	GLuint prog_projectCollisionConstraints;
 
 	void initComputeProgs();
 	void stepSingleCloth(Cloth *cloth);

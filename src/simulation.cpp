@@ -45,9 +45,6 @@ GLuint initComputeProg(const char *path) {
     const char *cs_str;
     cs_str = glslUtility::loadFile(path, cs_len);
 
-	printf(cs_str);
-	cout << endl;
-
     glShaderSource(cs, 1, &cs_str, &cs_len);
 
     GLint status;
@@ -57,6 +54,8 @@ GLuint initComputeProg(const char *path) {
     if (!status) {
         printf("Error compiling compute shader: %s\n", path);
         glslUtility::printShaderInfoLog(cs);
+		printf(cs_str);
+		cout << endl;
         exit(EXIT_FAILURE);
     }
     delete[] cs_str;
@@ -67,6 +66,8 @@ GLuint initComputeProg(const char *path) {
     if (!status) {
         printf("Error linking compute shader: %s\n", path);
         glslUtility::printLinkInfoLog(prog);
+		printf(cs_str);
+		cout << endl;
         exit(EXIT_FAILURE);
     }
 	return prog;
@@ -95,6 +96,10 @@ void Simulation::initComputeProgs() {
 	glUniform1f(0, timeStep);
 	
 	prog_copyBuffer = initComputeProg("../shaders/copy.comp.glsl");
+
+	prog_genCollisionConstraints = initComputeProg("../shaders/cloth_genCollisions.comp.glsl");
+
+	prog_projectCollisionConstraints = initComputeProg("../shaders/cloth_projectCollisions.comp.glsl");
 }
 
 void Simulation::stepSingleCloth(Cloth *cloth) {
@@ -155,7 +160,7 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		}
 
 		// project pin constraints
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos); // init positions, not pred 1
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_externalConstraints);
 		glUniform1i(1, numPinConstraints);

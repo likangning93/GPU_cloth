@@ -2,22 +2,27 @@
 
 TODO:
 -make all shaders aware of data amount (aka idx at which to do nothing and return) [done]
--change constraint format:
+-change constraint format: [done]
 	-neg length indicates a pin
 	-pin still has source and dest in the usual way
 	-item 4 in the vec4 is the constraint's K. so K will no longer be a uniform
 	-rename in shader to be more clear
-	-realization: we can simplify the cloth projecting shader a LOT b/c the external constraints case is invoked completely separately
--add an inverse mass buffer
+	-realization: we can simplify the cloth projecting shader a LOT b/c the external constraints case is invoked completely separately [done]
+-add an inverse mass buffer [done]
 	-just use w in the pos buffer to store weights
 	-and then use w in the predpos1 and predpos2 buffers to store inverse mass
--add an "inverse mass update" shader that scans the pin constraints and updates the inverse masses
+-add an "inverse mass update" shader that scans the pin constraints and updates the inverse masses [done]
+
 -add a compute shader to do obj mesh animation using a matrix and a weight buffer
 -this way we can animate a mesh moving and pin things to it at least
 -add a shader for obj collision detect and collision constraint gen
 	-how does an obj collision constraint work? is it just another buffer of pin constraints? gets refreshed every frame? -> in this case it's a REALLY good idea to modify weights on the GPU
 	-but read the section in the paper. there should be... time
 	-how to do it with an animated mesh? just use the mesh's updated position? worth trying
+		-in that case, need to handle both static and nonstatic in Muller. oh boy.
+	-ok: so collision constraints are as follows:
+		-direction to move p in (usually, surface normal at collision)
+		-magnitude to move p by
 
 12/06/2015
 -keep debugging
