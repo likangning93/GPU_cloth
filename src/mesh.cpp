@@ -26,7 +26,7 @@ Mesh::Mesh(string filename) {
   glm::vec4 *pos = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
     0, positionCount * sizeof(glm::vec4), bufMask);
   for (int i = 0; i < positionCount; i++) {
-    pos[i] = glm::vec4(initPositions[i], 1.0);
+    pos[i] = initPositions[i];
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
@@ -74,7 +74,7 @@ void Mesh::placeToken(string token, ifstream *myfile) {
     if (token.compare(0, 1, "v") == 0)
     {
       token.erase(0, 2); // we'll assume v x y z, so erase v and whitespace space
-      initPositions.push_back(parseOneVec3(token));
+      initPositions.push_back(glm::vec4(parseOneVec3(token), 0.0));
       return;
     }
 

@@ -1,12 +1,16 @@
 12/07/2015
 
 TODO:
--make all shaders aware of data amount (aka idx at which to do nothing and return)
+-make all shaders aware of data amount (aka idx at which to do nothing and return) [done]
 -change constraint format:
 	-neg length indicates a pin
 	-pin still has source and dest in the usual way
+	-item 4 in the vec4 is the constraint's K. so K will no longer be a uniform
 	-rename in shader to be more clear
+	-realization: we can simplify the cloth projecting shader a LOT b/c the external constraints case is invoked completely separately
 -add an inverse mass buffer
+	-just use w in the pos buffer to store weights
+	-and then use w in the predpos1 and predpos2 buffers to store inverse mass
 -add an "inverse mass update" shader that scans the pin constraints and updates the inverse masses
 -add a compute shader to do obj mesh animation using a matrix and a weight buffer
 -this way we can animate a mesh moving and pin things to it at least

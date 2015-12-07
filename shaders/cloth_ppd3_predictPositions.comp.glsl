@@ -20,11 +20,15 @@ layout(std430, binding = 3) buffer _pPos2 { // predicted position
 
 layout(location = 0) uniform float DT;
 
+layout(location = 1) uniform int numVertices;
+
 layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
     uint idx = gl_GlobalInvocationID.x;
-    vec3 prediction = Pos[idx].xyz + Vel[idx].xyz * DT;
-    pPos1[idx] = vec4(prediction, 1.0);
-    pPos2[idx] = vec4(prediction, 1.0);
+    if (idx >= numVertices) return;
+    vec4 vertexData = Pos[idx];
+    vec3 prediction = vertexData.xyz + Vel[idx].xyz * DT;
+    pPos1[idx] = vec4(prediction, vertexData.w);
+    pPos2[idx] = vec4(prediction, vertexData.w);
 }

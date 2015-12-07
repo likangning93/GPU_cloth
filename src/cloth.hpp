@@ -10,18 +10,29 @@
 class Cloth : public Mesh
 {
 public:
+
+	// positions will be vec4s: x, y, z, mass
+	// predicted positions will also be vec4s: x, y, z, invMass
+
   GLuint ssbo_pos_pred1; // predicted positions buffer
   GLuint ssbo_pos_pred2; // predicted positions buffer
 
   GLuint ssbo_vel; // shader storage buffer object -> holds velocities
 
+  // all constraints in these buffers are vec4s:
+  // index of pos to modify, index of influencer, rest length, stiffness K
+  // a negative rest length will indicate a "pin" constraint
   GLuint ssbo_internalConstraints[4];
   GLuint ssbo_externalConstraints;
 
   GLuint ssbo_collisionConstraints;
 
+  float default_internal_K = 0.9f;
+  float default_pin_K = 1.0f;
+  float default_inv_mass = 441.0f;
+
   // these vec3 constraints are index, index, rest length
-  std::vector<glm::vec3> internalConstraints[4];
+  std::vector<glm::vec4> internalConstraints[4];
   std::vector<glm::vec4> externalConstraints; // pins
 
   Cloth(string filename);

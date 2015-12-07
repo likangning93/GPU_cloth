@@ -22,7 +22,7 @@ public:
   GLuint ssbo_pos; // shader storage buffer object -> holds positions
   GLuint idxbo; // index buffer
 
-  vector<glm::vec3> initPositions;
+  vector<glm::vec4> initPositions;
   vector<glm::ivec4> indicesQuads;
   vector<int> indicesTris;
 

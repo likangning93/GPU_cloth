@@ -10,6 +10,19 @@ Cloth::Cloth(string filename) : Mesh(filename) {
   glGenBuffers(1, &ssbo_pos_pred1);
   glGenBuffers(1, &ssbo_pos_pred2);
 
+  // redo the positions buffer with masses
+
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
+	  NULL, GL_STREAM_COPY);
+  glm::vec4 *pos = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+	  0, positionCount * sizeof(glm::vec4), bufMask);
+  for (int i = 0; i < positionCount; i++) {
+	  initPositions[i].w = default_inv_mass;
+	  pos[i] = initPositions[i];
+  }
+  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+
   // set up ssbo for velocities
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_vel);
   glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
@@ -131,21 +144,23 @@ void Cloth::generateConstraints() {
     addConstraint(constraintsPerVertex[face[3]], constraintsPerVertex[face[0]]);
   }
 
-  // deploy constraints and buffers
+  // deploy internal constraints and buffers
 
   for (int i = 0; i < numVertices; i++) {
     constraintVertexIndices currSet = constraintsPerVertex.at(i);
     for (int j = 0; j < 4; j++) {
       if (currSet.indices[j] != -1) {
-        glm::vec3 shaderConstraint;
+        glm::vec4 shaderConstraint;
         shaderConstraint[0] = currSet.thisIndex;
         shaderConstraint[1] = currSet.indices[j];
 		if (currSet.thisIndex == currSet.indices[j]) {
 			printf("glitch\n");
 		}
-		glm::vec3 p1 = initPositions.at(currSet.thisIndex);
-		glm::vec3 p2 = initPositions.at(currSet.indices[j]);
-        shaderConstraint[2] = glm::length(p1 - p2);
+		glm::vec4 p1 = initPositions.at(currSet.thisIndex);
+		glm::vec4 p2 = initPositions.at(currSet.indices[j]);
+		shaderConstraint[2] = glm::length(glm::vec3(p1.x, p1.y, p1.z) - 
+			glm::vec3(p2.x, p2.y, p2.z));
+		shaderConstraint[3] = default_internal_K;
 		internalConstraints[j].push_back(shaderConstraint);
       }
     }
@@ -157,7 +172,7 @@ void Cloth::generateConstraints() {
     // gen buffer
 	glGenBuffers(1, &ssbo_internalConstraints[i]);
 
-    // allocate space for constraints on GPU
+    // allocate space for internal constraints on GPU
 	int numConstraints = internalConstraints[i].size();
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_internalConstraints[i]);
     glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec4),
@@ -168,13 +183,31 @@ void Cloth::generateConstraints() {
       0, numConstraints * sizeof(glm::vec4), bufMask);
 
     for (int j = 0; j < numConstraints; j++) {
-		if (int(internalConstraints[i].at(j).x) == int(internalConstraints[i].at(j).y)) {
-			printf("fart");
-		}
-		constraintsMapped[j] = glm::vec4(internalConstraints[i].at(j), 0.0);
+		constraintsMapped[j] = internalConstraints[i].at(j);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
   }
+
+  /*****************************************************************************
+  Set up the pins. These are the same format, but a negative rest length will
+  signal to the shader that "hey this is a pin constraint."
+  This is necessary for the step in which we update the inverse masses.
+  *****************************************************************************/
+
+  // do the external constraints (pins)
+  glGenBuffers(1, &ssbo_externalConstraints);
+  // buffer of external constraints. these are all bogus for now
+  // make some fake external constraints for now
+  externalConstraints.push_back(glm::vec4(0, 0, -1.0, default_pin_K));
+  externalConstraints.push_back(glm::vec4(40, 40, -1.0, default_pin_K));
+
+  // transfer
+  uploadExternalConstraints();
+
+  /*****************************************************************************
+   Collision constraints need to be handled a little differently and will have
+   a different format. Either way, the most possible is 1 per vertex.
+  *****************************************************************************/
 
   // make space for collision constraints. these are per-vertex
   glGenBuffers(1, &ssbo_collisionConstraints);
@@ -190,19 +223,6 @@ void Cloth::generateConstraints() {
 	  constraintsMapped[j] = bogus;
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
-
-  glGenBuffers(1, &ssbo_externalConstraints);
-  // buffer of external constraints. these are all bogus for now
-  for (int i = 0; i < numVertices; i++) {
-	  externalConstraints.push_back(bogus);
-  }
-
-  // make some fake external constraints for now
-  externalConstraints.at(0) = glm::vec4(0.0);
-  externalConstraints.at(1) = glm::vec4(40, 40, 0.0, 0.0);
-
-  // transfer
-  uploadExternalConstraints();
 }
 
 void Cloth::uploadExternalConstraints() {
