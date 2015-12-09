@@ -17,7 +17,7 @@ void main() {
     uint idx = gl_GlobalInvocationID.x;
     if (idx >= numVertices) return;
     vec4 vel0 = Vel[idx];
-    vel0 *= 0.95;
+    vel0.xyz *= 0.95;
 
-    Vel[idx] = vel0;
+    Vel[idx].xyz = vel0.xyz;
 }

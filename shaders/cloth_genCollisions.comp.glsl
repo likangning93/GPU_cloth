@@ -33,7 +33,7 @@ float intersectTriangle(vec3 orig, vec3 lookat, vec3 v0, vec3 v1, vec3 v2)
     vec3 w0, w;  // ray float
     float r, a, b; // params to calc ray-plane intersect
 
-    vec3 dir = normalize(lookat - orig);
+    vec3 dir = lookat - orig;
 
     // get triangle edge vectors and plane normal
     u = v1 - v0;
@@ -97,7 +97,7 @@ void main() {
     	vec3 v2 = pBody[int(triangle.z)].xyz;
 
     	float collisionT = intersectTriangle(pos, lookAt, v0, v1, v2);
-    	vec3 norm = cross(v2 - v0, v1 - v0);
+    	vec3 norm = normalize(cross(v1 - v0, v2 - v0));
     	if (collisionConstraint.w < 0.0 && collisionT >= 0.0) { // first contact
     		collisionConstraint = vec4(norm, collisionT);
     	}

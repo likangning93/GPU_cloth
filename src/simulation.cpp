@@ -132,7 +132,7 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glUseProgram(prog_ppd2_dampVelocity);
 	glUniform1i(0, numVertices);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_vel);
-	glDispatchCompute(workGroupCount_vertices, 1, 1);
+	//glDispatchCompute(workGroupCount_vertices, 1, 1);
 	
 	
 	/* predict new positions */
@@ -142,7 +142,6 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred1);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_pos_pred2);
-
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	
 	/* update inverse masses */
@@ -153,7 +152,7 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred1);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_externalConstraints);
-	glDispatchCompute(workGroupCountPinConstraints, 1, 1);
+	//glDispatchCompute(workGroupCountPinConstraints, 1, 1);
 
 	/* project cloth constraints N times */
 	for (int i = 0; i < projectTimes; i++) {
@@ -171,7 +170,7 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_internalConstraints[j]);
 			// project this set of constraints
-			glDispatchCompute(workGroupCountInnerConstraints, 1, 1);
+			//glDispatchCompute(workGroupCountInnerConstraints, 1, 1);
 		}
 
 		// project pin constraints
@@ -179,27 +178,31 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_externalConstraints);
 		glUniform1i(1, numPinConstraints);
-		glDispatchCompute(workGroupCountPinConstraints, 1, 1);
+		//glDispatchCompute(workGroupCountPinConstraints, 1, 1);
 
 		// ffwd pred1 to match pred2
 		
 		glUseProgram(prog_copyBuffer); // TODO: lol... THIS IS DUMB DO SOMETHING BETTER
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred2);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred1);
-		glDispatchCompute(workGroupCount_vertices, 1, 1);
+		//glDispatchCompute(workGroupCount_vertices, 1, 1);
 	}
 	
 	/* generate and resolve collision constraints */
 	for (int i = 0; i < numRigids; i++) {
 		genCollisionConstraints(cloth, rigids.at(i));
 	}
+	//retrieveBuffer(cloth->ssbo_collisionConstraints, 400);
+	//retrieveBuffer(cloth->ssbo_vel, 4);
+
+
 	glUseProgram(prog_projectCollisionConstraints);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_collisionConstraints);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_vel);
 	glUniform1i(0, numVertices);
-	glDispatchCompute(workGroupCount_vertices, 1, 1);
+	//glDispatchCompute(workGroupCount_vertices, 1, 1);
 
 	/* update positions and velocities */
 	glUseProgram(prog_ppd7_updateVelPos);
@@ -210,7 +213,6 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2); // no ffwd
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 
-	//retrieveBuffer(cloth->ssbo_internalConstraints[0], 100);
 	//retrieveBuffer(cloth->ssbo_internalConstraints[1], 100);
 	//retrieveBuffer(cloth->ssbo_internalConstraints[2], 100);
 	//retrieveBuffer(cloth->ssbo_internalConstraints[3], 100);
@@ -231,10 +233,8 @@ void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {
 	checkGLError("backcopy");
 
 	for (int i = 0; i < numItems; i++) {
-		if (int(positions.at(i).x) == int(positions.at(i).y)) {
-			cout << "fart" << endl;
-		}
-		//cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << endl;
+		//if (positions.at(i).w > 0.0)
+			cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << positions.at(i).w << endl;
 	}
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }

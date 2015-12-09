@@ -30,7 +30,7 @@ Cloth::Cloth(string filename) : Mesh(filename) {
   glm::vec4 *velocity = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 	  0, positionCount * sizeof(glm::vec4), bufMask);
   for (int i = 0; i < positionCount; i++) {
-	  velocity[i] = glm::vec4(0.0);
+	  velocity[i] = glm::vec4(0.0f);
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
@@ -41,7 +41,7 @@ Cloth::Cloth(string filename) : Mesh(filename) {
   glm::vec4 *ppos1 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 	  0, positionCount * sizeof(glm::vec4), bufMask);
   for (int i = 0; i < positionCount; i++) {
-	  ppos1[i] = glm::vec4(0.0);
+	  ppos1[i] = initPositions[i];
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 
@@ -52,7 +52,7 @@ Cloth::Cloth(string filename) : Mesh(filename) {
   glm::vec4 *ppos2 = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
 	  0, positionCount * sizeof(glm::vec4), bufMask);
   for (int i = 0; i < positionCount; i++) {
-	  ppos2[i] = glm::vec4(0.0);
+	  ppos2[i] = initPositions[i];
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 

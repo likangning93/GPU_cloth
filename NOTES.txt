@@ -23,6 +23,9 @@ TODO:
 	-ok: so collision constraints are as follows:
 		-direction to move p in (usually, surface normal at collision)
 		-magnitude to move p by
+	-collision constraint you're doing is very different from muller
+	-the C in muller just replaces the C in the inner constraint solver for muller's
+	-can still use vec4 buffers: store normal (really) and use parametric to get q based on p
 
 12/06/2015
 -keep debugging

@@ -33,9 +33,12 @@ void main() {
 
     vec3 posOldTimestep = pCloth1[idx].xyz;
 	vec3 posNewTimestep = pCloth2[idx].xyz;
-	vec3 restitutionDir = normalize(posNewTimestep - posOldTimestep);
+	vec3 dir = posNewTimestep - posOldTimestep;
+	vec3 isx = dir * constraint.w + posOldTimestep;
+	float C = dot((posNewTimestep - isx), constraint.xyz);
 
-	pCloth2[idx].xyz = 	posOldTimestep + restitutionDir * constraint.w;
+	pCloth2[idx].xyz -= C * (-dir) / length(dir);
+	//pCloth2[idx].xyz = posOldTimestep - dir * constraint.w;
 	velocities[idx].xyz = vec3(0.0);
-	pClothCollisionConstraints[idx] = vec4(0.0, 0.0, 0.0, -1.0); // reset constraint
+	pClothCollisionConstraints[idx] = vec4(-1.0, -1.0, -1.0, -1.0); // reset constraint
 }
