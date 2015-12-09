@@ -76,9 +76,9 @@ bool init(int argc, char **argv) {
     }
     glGetError();
 
-    // Create and setup VAO
-    glGenVertexArrays(1, &planetVAO);
-    glBindVertexArray(planetVAO);
+    // Create and setup VAO for drawing
+	glGenVertexArrays(1, &drawingVAO);
+	glBindVertexArray(drawingVAO);
     glEnableVertexAttribArray(attr_position);
     glVertexAttribPointer((GLuint) attr_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindVertexArray(0);
@@ -102,7 +102,7 @@ bool init(int argc, char **argv) {
 	std::vector<string> cloths;
 	//cloths.push_back("meshes/floor.obj");
 	cloths.push_back("meshes/20x20cloth.obj");
-	//cloths.push_back("meshes/2x2cloth.obj");
+	//cloths.push_back("meshes/3x3cloth.obj");
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
@@ -114,16 +114,6 @@ bool init(int argc, char **argv) {
 
 void initShaders(GLuint * program) {
     GLint location;
-
-    program[PROG_PLANET] = glslUtility::createProgram(
-                     "shaders/planet.vert.glsl",
-                     "shaders/planet.geom.glsl",
-                     "shaders/planet.frag.glsl", attributeLocations, 1);
-    glUseProgram(program[PROG_PLANET]);
-
-    if ((location = glGetUniformLocation(program[PROG_PLANET], "u_projMatrix")) != -1) {
-        glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
-    }
 
 	program[PROG_CLOTH] = glslUtility::createProgram(
 		"shaders/cloth.vert.glsl",
@@ -192,7 +182,7 @@ void mainLoop() {
 void drawMesh(Mesh *drawMe) {
 
   glUseProgram(program[PROG_CLOTH]);
-  glBindVertexArray(planetVAO);
+  glBindVertexArray(drawingVAO);
 
   // Tell the GPU where the indices are: in the index buffer
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawMe->idxbo);
@@ -270,12 +260,8 @@ void updateCamera() {
 	projection = glm::perspective(fovy, float(width) / float(height), zNear, zFar);
 	glm::mat4 view = glm::lookAt(cameraPosition, lookAt, glm::vec3(0, 0, 1));
 	projection = projection * view;
-	glUseProgram(program[PROG_PLANET]);
 
 	GLint location;
-	if ((location = glGetUniformLocation(program[PROG_PLANET], "u_projMatrix")) != -1) {
-		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
-	}
 
 	glUseProgram(program[PROG_CLOTH]);
 	if ((location = glGetUniformLocation(program[PROG_CLOTH], "u_projMatrix")) != -1) {

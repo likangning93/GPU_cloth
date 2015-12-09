@@ -21,13 +21,13 @@ Mesh::Mesh(string filename) {
 
   glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos);
   glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
-    NULL, GL_STREAM_COPY);
-  glm::vec4 *pos = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
-    0, positionCount * sizeof(glm::vec4), bufMask);
-  for (int i = 0; i < positionCount; i++) {
-    pos[i] = initPositions[i];
-  }
-  glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+    &initPositions[0], GL_STREAM_COPY);
+  //glm::vec4 *pos = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+  //  0, positionCount * sizeof(glm::vec4), bufMask);
+  //for (int i = 0; i < positionCount; i++) {
+  //  pos[i] = initPositions[i];
+  //}
+  //glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
 Mesh::~Mesh() {

@@ -1,3 +1,23 @@
+12/09/2015
+-confirmed: compute shader memory can be incoherent: https://www.opengl.org/wiki/Memory_Model
+-basically just need to do glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT) after each PBD stage
+-guess the lab computers are slower on CPU than on GPU?
+
+12/08/2015
+WEIRD DRIPPY CLOTH WITH NO CONSTRAINTS ISSUE
+-tried it in the lab, no problems there?
+-Kai suspects a memory issue of some kind -> hmmm will keep looking
+-more observations:
+	-more printing between shader stages == more stable simulation
+	-are the stages dispatching too close together? -> going from one stage to another too soon -> update positions before velocities are done
+		-how can I make them wait?
+		-would also make sense of the part where not updating velocity in stage 7 improves stability but only up to a point.
+	-tomorrow: try condensing shader stages, like squishing external forces + prediction into a single stage. -> means giving up on good damping though
+		-could indicate the dispatch problem
+
+TODO
+-strip the prog planet stuff, don't need that anymore [done]
+
 12/07/2015
 
 TODO:

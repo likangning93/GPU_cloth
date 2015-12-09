@@ -6,6 +6,8 @@
 #define WORK_GROUP_SIZE_ACC 16
 #define WORK_GROUP_SIZE_VELPOS 16
 
+#define DEBUG_STABILITY 1 // for debugging the seeming stability issue on my computer <- resolved, memory coherence
+
 Simulation::Simulation(vector<string> &body_filenames,
 	vector<string> &cloth_filenames) {
 	initComputeProgs();
@@ -20,7 +22,7 @@ Simulation::Simulation(vector<string> &body_filenames,
 	numCloths = cloth_filenames.size();
 	for (int i = 0; i < numCloths; i++) {
 		Cloth *newCloth = new Cloth(cloth_filenames.at(i));
-		newCloth->uploadExternalConstraints(); // TODO: test
+		newCloth->uploadExternalConstraints();
 		cloths.push_back(newCloth);
 	}
 	checkGLError("init cloths");
@@ -121,19 +123,26 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	int numVertices = cloth->initPositions.size();
 	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
 
+	//cout << "old velocities" << endl;
+	//retrieveBuffer(cloth->ssbo_vel, 4);
+
 	/* compute new velocities with external forces */
 	glUseProgram(prog_ppd1_externalForces);
 	glUniform1i(2, numVertices);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_vel);
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT); // emulate ssbo memory coherence
 
+	//cout << "new velocities" << endl;
+	//retrieveBuffer(cloth->ssbo_vel, 4);
 
+	#if DEBUG_STABILITY
 	/* damp velocities */
 	glUseProgram(prog_ppd2_dampVelocity);
 	glUniform1i(0, numVertices);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_vel);
-	//glDispatchCompute(workGroupCount_vertices, 1, 1);
-	
+	glDispatchCompute(workGroupCount_vertices, 1, 1);
+	#endif
 	
 	/* predict new positions */
 	glUseProgram(prog_ppd3_predictPositions);
@@ -143,7 +152,15 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred1);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_pos_pred2);
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
-	
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	//cout << "old positions" << endl;
+	//retrieveBuffer(cloth->ssbo_pos, 4);
+	//cout << "new positions" << endl;
+	//retrieveBuffer(cloth->ssbo_pos_pred1, 4);
+	//cout << endl;
+
+	#if DEBUG_STABILITY
 	/* update inverse masses */
 	int numPinConstraints = cloth->externalConstraints.size();
 	int workGroupCountPinConstraints = (numPinConstraints - 1) / WORK_GROUP_SIZE_ACC + 1;
@@ -152,7 +169,8 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred1);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_externalConstraints);
-	//glDispatchCompute(workGroupCountPinConstraints, 1, 1);
+	glDispatchCompute(workGroupCountPinConstraints, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	/* project cloth constraints N times */
 	for (int i = 0; i < projectTimes; i++) {
@@ -170,7 +188,9 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_internalConstraints[j]);
 			// project this set of constraints
-			//glDispatchCompute(workGroupCountInnerConstraints, 1, 1);
+			glDispatchCompute(workGroupCountInnerConstraints, 1, 1);
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
 		}
 
 		// project pin constraints
@@ -178,14 +198,17 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_externalConstraints);
 		glUniform1i(1, numPinConstraints);
-		//glDispatchCompute(workGroupCountPinConstraints, 1, 1);
+		glDispatchCompute(workGroupCountPinConstraints, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 		// ffwd pred1 to match pred2
 		
 		glUseProgram(prog_copyBuffer); // TODO: lol... THIS IS DUMB DO SOMETHING BETTER
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred2);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred1);
-		//glDispatchCompute(workGroupCount_vertices, 1, 1);
+		glDispatchCompute(workGroupCount_vertices, 1, 1);
+		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
 	}
 	
 	/* generate and resolve collision constraints */
@@ -193,7 +216,6 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		genCollisionConstraints(cloth, rigids.at(i));
 	}
 	//retrieveBuffer(cloth->ssbo_collisionConstraints, 400);
-	//retrieveBuffer(cloth->ssbo_vel, 4);
 
 
 	glUseProgram(prog_projectCollisionConstraints);
@@ -202,7 +224,10 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_collisionConstraints);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_vel);
 	glUniform1i(0, numVertices);
-	//glDispatchCompute(workGroupCount_vertices, 1, 1);
+	glDispatchCompute(workGroupCount_vertices, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	#endif
 
 	/* update positions and velocities */
 	glUseProgram(prog_ppd7_updateVelPos);
@@ -210,8 +235,9 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_vel);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2); // no ffwd
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred1); // no ffwd
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
 	//retrieveBuffer(cloth->ssbo_internalConstraints[1], 100);
 	//retrieveBuffer(cloth->ssbo_internalConstraints[2], 100);
@@ -232,9 +258,13 @@ void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {
 	}
 	checkGLError("backcopy");
 
-	for (int i = 0; i < numItems; i++) {
+	for (int i = 0; i < numItems; i += 4) {
 		//if (positions.at(i).w > 0.0)
-			cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << positions.at(i).w << endl;
+		for (int j = 0; j < 4; j++) {
+			cout << positions.at(i).z << " ";
+		}
+		cout << endl;
+			//cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << positions.at(i).w << endl;
 	}
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }

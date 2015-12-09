@@ -26,6 +26,8 @@ void main() {
     uint idx = gl_GlobalInvocationID.x;
     if (idx >= numVertices) return;
 
-    Vel[idx].xyz = (pPos[idx].xyz - Pos[idx].xyz) / DT;
-    Pos[idx].xyz = pPos[idx].xyz;
+    vec3 predictedPosition = pPos[idx].xyz;
+
+    Vel[idx].xyz = (predictedPosition - Pos[idx].xyz) / DT;
+    Pos[idx].xyz = predictedPosition;
 }

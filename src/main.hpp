@@ -19,14 +19,11 @@
 
 GLuint attr_position = 0;
 const char *attributeLocations[] = { "Position" };
-GLuint planetVAO = 0;
-GLuint planetVBO = 0;
-GLuint planetIBO = 0;
+GLuint drawingVAO = 0;
 GLuint displayImage;
 GLuint program[2];
 
-const unsigned int PROG_PLANET = 0; // program for renderign planets. holdover from nbody
-const unsigned int PROG_CLOTH = 1; // program for rendering cloth
+const unsigned int PROG_CLOTH = 0; // program for rendering cloth
 
 const float fovy = (float) (PI / 4);
 const float zNear = 0.10f;
