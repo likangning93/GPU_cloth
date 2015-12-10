@@ -101,8 +101,8 @@ bool init(int argc, char **argv) {
 
 	std::vector<string> cloths;
 	//cloths.push_back("meshes/floor.obj");
-	//cloths.push_back("meshes/20x20cloth.obj");
-	cloths.push_back("meshes/3x3cloth.obj");
+	cloths.push_back("meshes/20x20cloth.obj");
+	//cloths.push_back("meshes/3x3cloth.obj");
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");

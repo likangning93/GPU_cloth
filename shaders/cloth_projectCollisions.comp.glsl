@@ -19,6 +19,8 @@ layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1
 
 layout(location = 0) uniform int numPositions;
 
+layout(location = 1) uniform float bounceFactor;
+
 void main() {
     uint idx = gl_GlobalInvocationID.x;
     if (idx >= numPositions) return;
@@ -49,6 +51,6 @@ void main() {
 	// unsigned scalar of this projection is none other than (p - q) dot n.norm
 	// we're assuming n is already normalized
 
-	vec3 correction = dot(isx - posNewTimestep, constraint.xyz) * 1.1 * constraint.xyz;
+	vec3 correction = dot(isx - posNewTimestep, constraint.xyz) * (1.0 + bounceFactor) * constraint.xyz;
 	pCloth2[idx].xyz += correction;
 }

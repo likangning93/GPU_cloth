@@ -22,6 +22,8 @@ public:
 	float timeStep = 0.016;
 	glm::vec3 Gravity = glm::vec3(0.0f, 0.0f, -0.98f);
 
+	float collisionBounceFactor = 0.2f;
+
 	GLuint prog_ppd1_externalForces;
 	GLuint prog_ppd2_dampVelocity;
 	GLuint prog_ppd3_predictPositions;

@@ -6,6 +6,8 @@
 #define WORK_GROUP_SIZE_ACC 16
 #define WORK_GROUP_SIZE_VELPOS 16
 
+#define DEBUG_VERBOSE 0
+
 Simulation::Simulation(vector<string> &body_filenames,
 	vector<string> &cloth_filenames) {
 	initComputeProgs();
@@ -100,6 +102,8 @@ void Simulation::initComputeProgs() {
 	prog_genCollisionConstraints = initComputeProg("../shaders/cloth_genCollisions.comp.glsl");
 
 	prog_projectCollisionConstraints = initComputeProg("../shaders/cloth_projectCollisions.comp.glsl");
+	glUseProgram(prog_projectCollisionConstraints);
+	glUniform1f(1, collisionBounceFactor);
 }
 
 void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
@@ -198,10 +202,14 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	for (int i = 0; i < numRigids; i++) {
 		genCollisionConstraints(cloth, rigids.at(i));
 	}
+
+#if DEBUG_VERBOSE
 	cout << "init ";
 	retrieveBuffer(cloth->ssbo_pos, 1);
 	cout << "pred befor ";
 	retrieveBuffer(cloth->ssbo_pos_pred2, 1);
+#endif
+
 	glUseProgram(prog_projectCollisionConstraints);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
@@ -209,12 +217,15 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glUniform1i(0, numVertices);
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+#if DEBUG_VERBOSE
 	cout << "pred after ";
 	retrieveBuffer(cloth->ssbo_pos_pred2, 1);
-
-	/* update positions and velocities, reset collision constraints */
 	cout << "con ";
 	retrieveBuffer(cloth->ssbo_collisionConstraints, 1);
+#endif
+
+	/* update positions and velocities, reset collision constraints */
 
 	glUseProgram(prog_ppd7_updateVelPos);
 	glUniform1i(1, numVertices);
@@ -225,9 +236,12 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_collisionConstraints);
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+#if DEBUG_VERBOSE
 	cout << "vel ";
 	retrieveBuffer(cloth->ssbo_vel, 1);
 	cout << endl;
+#endif
 }
 
 void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {

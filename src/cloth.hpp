@@ -27,7 +27,7 @@ public:
 
   GLuint ssbo_collisionConstraints;
 
-  float default_internal_K = 0.2f;
+  float default_internal_K = 0.9f;
   float default_pin_K = 1.0f;
   float default_inv_mass = 441.0f;
 
