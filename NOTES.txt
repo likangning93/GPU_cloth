@@ -15,8 +15,8 @@ TODO:
 -ok. basic animation system TODO:
 	-add transformation state to rbody [done]
 	-add a "get matrix at time" method [done]
-	-add a shader that transforms the mesh based on this new transformation
-	-give the mesh an "init positions" ssbo to go with the "positions" ssbo
+	-add a shader that transforms the mesh based on this new transformation [done]
+	-give the mesh an "init positions" ssbo to go with the "positions" ssbo [done]
 
 -get nonstatic collision [done enough to wear a dress]
 	-one idea: add static collision handling -> not so bad, just another shader stage or a modification to the existing one. also, we need this pretty bad
