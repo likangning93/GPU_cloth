@@ -20,6 +20,9 @@ layout(std430, binding = 3) readonly buffer _bodyTriangles {
 layout(std430, binding = 4) buffer _collisionConstraints { // vec4s of normal dir and distance 
     vec4 pClothCollisionConstraints[];
 };
+layout(std430, binding = 5) buffer _debug { // vec4s of debug data
+    vec4 debug[];
+};
 
 layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1) in;
 
@@ -111,13 +114,11 @@ void generateStaticConstraint(vec3 pos, vec3 lookAt) {
 }
 
 // adapted from http://undernones.blogspot.com/2010/12/gpu-ray-tracing-with-glsl.html
-float intersectTriangle(vec3 orig, vec3 lookAt, vec3 v0, vec3 v1, vec3 v2)
+float intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2)
 {
     vec3 u, v, n; // triangle vectors
     vec3 w0, w;  // ray float
     float r, a, b; // params to calc ray-plane intersect
-
-    vec3 dir = lookAt - orig;
 
     // get triangle edge vectors and plane normal
     u = v1 - v0;
@@ -170,10 +171,15 @@ void main() {
 
     vec3 pos = pCloth1[idx].xyz;
 	vec3 lookAt = pCloth2[idx].xyz;
+    float dirScale = length(lookAt - pos);
+    vec3 dir = (lookAt - pos) / dirScale;
 
     vec4 collisionConstraint = vec4(-1.0); // a bogus collisionConstraint
     // if there's an odd number of collisions, we're inside the mesh already
-    int numCollisions = 0;
+    int numCollisions = 0; // which means we need a static constraint
+
+    debug[idx] = vec4(-1.0);
+    vec3 debugPos;
 
     // check against every triangle in the mesh.
     for (int i = 0; i < numTriangles; i++) {
@@ -182,10 +188,16 @@ void main() {
     	vec3 v0 = pBody[int(triangle.x)].xyz;
     	vec3 v1 = pBody[int(triangle.y)].xyz;
     	vec3 v2 = pBody[int(triangle.z)].xyz;
+        vec3 norm = normalize(cross(v1 - v0, v2 - v0));
 
-    	float collisionT = intersectTriangle(pos, lookAt, v0, v1, v2);
-        if (collisionT > 0.0) numCollisions++;
-    	vec3 norm = normalize(cross(v1 - v0, v2 - v0));
+    	float collisionT = intersectTriangle(pos, dir, v0, v1, v2) / dirScale;
+        if (collisionT >= 0.0) {
+            if (numCollisions == 0) debug[idx].x = collisionT;
+            if (numCollisions == 1) debug[idx].y = collisionT;
+            if (numCollisions == 2) debug[idx].z = collisionT;
+            debugPos = pos + (lookAt - pos) * collisionT;
+            numCollisions++;
+        }
         // collision out of bounds
         if (collisionT > 1.0 || collisionT < 0.0) {
             continue;
@@ -198,11 +210,13 @@ void main() {
     		collisionConstraint = vec4(norm, collisionT);
     	}
     }
+    debug[idx].w = numCollisions;
+
     // if the number of collisions is odd (we are inside the mesh)
     // generate a static constraint instead.
-    if (numCollisions % 2 != 0) {
-        pCloth2[idx].xyz = vec3(0.0, 0.0, 3.0);
-        //generateStaticConstraint(pos, lookAt); // buggy.
+    if (numCollisions % 2 > 0) {
+        //pCloth2[idx].xyz = vec3(0.0, 0.0, 3.0);
+        generateStaticConstraint(pos, lookAt);
         return;
     }
 

@@ -117,10 +117,13 @@ void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, rbody->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, rbody->ssbo_triangles);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, cloth->ssbo_collisionConstraints);
-	
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, cloth->ssbo_debug);
+
 	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+	retrieveBuffer(cloth->ssbo_debug, 81);
 }
 
 void Simulation::stepSingleCloth(Cloth *cloth) {
@@ -225,7 +228,7 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	cout << "con ";
 	retrieveBuffer(cloth->ssbo_collisionConstraints, 1);
 #endif
-
+	//retrieveBuffer(cloth->ssbo_collisionConstraints, 1);
 	/* update positions and velocities, reset collision constraints */
 
 	glUseProgram(prog_ppd7_updateVelPos);
@@ -257,8 +260,9 @@ void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {
 		positions.push_back(glm::vec4(constraintsMapped[i]));
 	}
 	checkGLError("backcopy");
-	for (int i = 0; i < numItems; i++) {
-		cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << positions.at(i).w << endl;
+ 	for (int i = 0; i < numItems; i++) {
+		if (int(positions.at(i).w + 0.0001f) == 1)
+			cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << positions.at(i).w << endl;
 	}
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
