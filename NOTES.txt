@@ -1,3 +1,48 @@
+12/10/2015
+
+TODO:
+-add animation system -> biggie, what do?
+	-not enough time to do a full weighted mesh loader
+		-would probably want an obj library for this...
+		-would also need to load mesh weights as images -> whole other ball of dirt
+		-unless... we wrote a really lousy FBX ascii parser that only gets vertices and skin weights -> doable?
+	-bvh loader and player: http://www.gamedev.net/page/resources/_/technical/game-programming/bvh-file-loading-and-displaying-r3295
+	-alternatively, for now just load a series of transformations and use them to keyframe a single mesh -> return of the low-poly panda
+
+-get nonstatic collision
+	-one idea: add static collision handling -> not so bad, just another shader stage or a modification to the existing one. also, we need this pretty bad
+		-way we're doing continuous collision handling: store a normal and a distance. distance + knowledge of old/new positions lets you compute entry point
+		-static collision works by requiring a point that you move towards along with a normal. point isn't necessarily in the moving direction
+			-whatever happens, we'll probably use w to determine if this is static of continuous collision (continuous.w < 1.0)
+			-could provide the point directly and use the distance as a triangle index + 2
+			-could add more buffers, more writes -> messier
+			-could move the "old position" so that the resulting "new - old" gives the right direction for resolution -> hmmmmmmm...
+				-tbh, this would also make velocity update much easier <- ok let's do this one
+
+		-generating static collisions:
+			-need to do "closest point on triangle to vertex" -> hmmm...
+			-find shortest distance point -> plane
+			-check if point is in triangle using barycentric
+			-if not, check for shortest distance to each edge
+			-if still no good, do shortest distance to each vertex in triangle
+
+			-approximation: split triangle sierpinsky style and check against each centroid. iterate on the closest triangle -> faster? slower? more registers? more branching? accurate enough?
+			-other other idea: just check against vertices and centroids, don't get the "true" best position. we project back along the normal anyway. -> try this first. hacky, but fast.
+
+			-OBSERVATION: just detecting this case and advecting backwards seems to work surprisingly ok with a static collider mesh. surprise! -> well... it's stable at least
+				-so... could we just pass in the collider's current and future positions? and use that "velocity" to update the advecting direction here?
+				-currently collision counting to determine internalness is very, VERY buggy.
+			-current bug seems to be that the shader counts too many collisions for some vertices
+
+	-other idea: pass the current timestep and future timestep mesh to the constraint generator, add a buffer for "velocity to add..." -> uhhhh. no.
+
+-TODO as an analysis maybe? add a stage to precompute and cache all the normals so you don't have to calculate them in collision checking.
+
+-add a good way to pin things besides hardcoding indices
+	-would involve transferring back to CPU and raycasting, which is ok
+	-add drawing for pins -> so you can turn them off
+
+
 12/09/2015
 -confirmed: compute shader memory can be incoherent: https://www.opengl.org/wiki/Memory_Model
 -basically just need to do glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT) after each PBD stage
@@ -10,6 +55,9 @@ TODO
 -get nonstatic collision
 -add animation system -> biggie
 -make meshes able to draw in different colors... big problem right now [done]
+-add proper damping?
+	-will probably require implementing scan -> worthwhile? having "real" damping might not even be noticeable
+-add a good way to pin things besides hardcoding indices -> would involve raycasting
 
 12/08/2015
 WEIRD DRIPPY CLOTH WITH NO CONSTRAINTS ISSUE

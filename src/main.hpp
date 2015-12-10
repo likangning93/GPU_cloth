@@ -36,6 +36,7 @@ float zoom = 5.0f;
 glm::vec3 lookAt = glm::vec3(0.0f, 0.0f, 0.0f);
 
 bool pause = true;
+bool stepFrames = false;
 
 //====================================
 // Main

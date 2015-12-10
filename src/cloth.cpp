@@ -201,8 +201,8 @@ void Cloth::generateConstraints() {
   glGenBuffers(1, &ssbo_externalConstraints);
   // buffer of external constraints. these are all bogus for now
   // make some fake external constraints for now
-  externalConstraints.push_back(glm::vec4(0, 0, -1.0, default_pin_K));
-  externalConstraints.push_back(glm::vec4(40, 40, -1.0, default_pin_K));
+  //externalConstraints.push_back(glm::vec4(0, 0, -1.0, default_pin_K));
+  //externalConstraints.push_back(glm::vec4(40, 40, -1.0, default_pin_K));
 
   // transfer
   uploadExternalConstraints();

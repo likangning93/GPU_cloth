@@ -26,7 +26,7 @@ void main() {
     if (idx >= numPositions) return;
 
 	vec4 constraint = pClothCollisionConstraints[idx];
-	if (constraint.w < 0.0) { // no correction
+	if (constraint.w < -0.01) { // no correction
 		return;
 	}
 

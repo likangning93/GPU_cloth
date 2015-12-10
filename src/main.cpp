@@ -97,12 +97,16 @@ bool init(int argc, char **argv) {
 
 	// Initialize simulation
 	std::vector<string> colliders;
-	colliders.push_back("meshes/floor.obj");
+	//colliders.push_back("meshes/floor.obj");
+	colliders.push_back("meshes/low_poly_bear.obj");
+	//colliders.push_back("meshes/semi_smooth_cube.obj");
 
 	std::vector<string> cloths;
 	//cloths.push_back("meshes/floor.obj");
-	cloths.push_back("meshes/20x20cloth.obj");
+	//cloths.push_back("meshes/20x20cloth.obj");
 	//cloths.push_back("meshes/3x3cloth.obj");
+	cloths.push_back("meshes/bear_cloth.obj");
+	//cloths.push_back("meshes/dress.obj");
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
@@ -172,7 +176,8 @@ void mainLoop() {
 			drawMesh(sim->cloths.at(i));
 		}
 		glfwSwapBuffers(window);
-
+		if (stepFrames)
+			pause = true;
 #endif
     }
     glfwDestroyWindow(window);
@@ -250,6 +255,9 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 	}
 	if (key == GLFW_KEY_X && action == GLFW_PRESS) {
 		zoom += 0.5f;
+	}
+	if (key == GLFW_KEY_F && action == GLFW_PRESS) {
+		stepFrames = !stepFrames;
 	}
 	updateCamera();
 }
