@@ -198,8 +198,10 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	for (int i = 0; i < numRigids; i++) {
 		genCollisionConstraints(cloth, rigids.at(i));
 	}
-	//cout << "before";
-	//retrieveBuffer(cloth->ssbo_pos_pred2, 1);
+	cout << "init ";
+	retrieveBuffer(cloth->ssbo_pos, 1);
+	cout << "pred befor ";
+	retrieveBuffer(cloth->ssbo_pos_pred2, 1);
 	glUseProgram(prog_projectCollisionConstraints);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
@@ -207,10 +209,11 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glUniform1i(0, numVertices);
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	//cout << "after";
-	//retrieveBuffer(cloth->ssbo_pos_pred2, 1);
-	//cout << endl;
+	cout << "pred after ";
+	retrieveBuffer(cloth->ssbo_pos_pred2, 1);
+
 	/* update positions and velocities, reset collision constraints */
+	cout << "con ";
 	retrieveBuffer(cloth->ssbo_collisionConstraints, 1);
 
 	glUseProgram(prog_ppd7_updateVelPos);
@@ -218,13 +221,12 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_vel);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred1); // no ffwd
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_pos_pred2);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, cloth->ssbo_collisionConstraints);
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
-	cout << "con ";
-	retrieveBuffer(cloth->ssbo_vel, 1);
 	cout << "vel ";
+	retrieveBuffer(cloth->ssbo_vel, 1);
 	cout << endl;
 }
 
@@ -240,15 +242,8 @@ void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {
 		positions.push_back(glm::vec4(constraintsMapped[i]));
 	}
 	checkGLError("backcopy");
-	bool printedStuff = false;
 	for (int i = 0; i < numItems; i++) {
-		//if (positions.at(i).w < -0.5f) {
-			printedStuff = true;
-			cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << positions.at(i).w << endl;
-		//}
-	}
-	if (positions.at(0).w > 0.0f) {
-		cout << "case" << endl;
+		cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << positions.at(i).w << endl;
 	}
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }

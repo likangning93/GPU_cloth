@@ -49,6 +49,6 @@ void main() {
 	// unsigned scalar of this projection is none other than (p - q) dot n.norm
 	// we're assuming n is already normalized
 
-	vec3 correction = (dot(isx - posNewTimestep, constraint.xyz) + 0.001 ) * constraint.xyz;
-	//pCloth2[idx].xyz += correction;
+	vec3 correction = dot(isx - posNewTimestep, constraint.xyz) * 1.1 * constraint.xyz;
+	pCloth2[idx].xyz += correction;
 }
