@@ -97,12 +97,12 @@ bool init(int argc, char **argv) {
 
 	// Initialize simulation
 	std::vector<string> colliders;
-	//colliders.push_back("meshes/floor.obj");
+	colliders.push_back("meshes/floor.obj");
 
 	std::vector<string> cloths;
 	//cloths.push_back("meshes/floor.obj");
-	cloths.push_back("meshes/20x20cloth.obj");
-	//cloths.push_back("meshes/3x3cloth.obj");
+	//cloths.push_back("meshes/20x20cloth.obj");
+	cloths.push_back("meshes/3x3cloth.obj");
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
@@ -183,6 +183,12 @@ void drawMesh(Mesh *drawMe) {
 
   glUseProgram(program[PROG_CLOTH]);
   glBindVertexArray(drawingVAO);
+
+  // upload color uniform
+  GLint location;
+  if ((location = glGetUniformLocation(program[PROG_CLOTH], "u_color")) != -1) {
+	  glUniform3fv(location, 1, &drawMe->color[0]);
+  }
 
   // Tell the GPU where the indices are: in the index buffer
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawMe->idxbo);

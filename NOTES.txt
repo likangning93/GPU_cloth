@@ -3,6 +3,13 @@
 -basically just need to do glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT) after each PBD stage
 -guess the lab computers are slower on CPU than on GPU?
 
+TODO
+-clean the stuff used to find the barrier problem [done]
+-fix static collision
+-get nonstatic collision
+-add animation system -> biggie
+-make meshes able to animate in different colors... big problem right now
+
 12/08/2015
 WEIRD DRIPPY CLOTH WITH NO CONSTRAINTS ISSUE
 -tried it in the lab, no problems there?
@@ -17,6 +24,8 @@ WEIRD DRIPPY CLOTH WITH NO CONSTRAINTS ISSUE
 
 TODO
 -strip the prog planet stuff, don't need that anymore [done]
+-add stage after PBD that looks at collision constraints, updates velocities, then clears collision constraints
+-make the "bounce" in the collision resolution shader a uniform
 
 12/07/2015
 

@@ -14,6 +14,9 @@ layout(std430, binding = 1) buffer _Pos { // position in the last timestep
 layout(std430, binding = 2) readonly buffer _pPos { // corrected predicted positions
     vec4 pPos[];
 };
+layout(std430, binding = 3) buffer _colConstraints { // collision constraints from the last timestep
+    vec4 colConstraints[]; // at most one per vertex, so parallelizing here by vertex is fine
+};
 
 layout(location = 0) uniform float DT;
 layout(location = 1) uniform int numVertices;
@@ -27,7 +30,17 @@ void main() {
     if (idx >= numVertices) return;
 
     vec3 predictedPosition = pPos[idx].xyz;
+    vec3 predictedVelocity = (predictedPosition - Pos[idx].xyz) / DT;
 
-    Vel[idx].xyz = (predictedPosition - Pos[idx].xyz) / DT;
+    // if there was a collision constraint, bounce baby bounce
+    vec4 constraint = colConstraints[idx];
+    if (constraint.w >= 0.0) {
+        //predictedVelocity = vec3(0.0, 0.0, 0.1);
+        // from wolfram: reflecting is v' = v - 2 * dot(v, n) * n
+        predictedVelocity -= 2 * dot(predictedVelocity, constraint.xyz) * constraint.xyz;
+    }
+
+    Vel[idx].xyz = predictedVelocity;
     Pos[idx].xyz = predictedPosition;
+    colConstraints[idx] = vec4(-1.0);
 }

@@ -26,6 +26,8 @@ public:
   vector<glm::ivec4> indicesQuads;
   vector<int> indicesTris;
 
+  glm::vec3 color;
+
   Mesh(string filename);
   ~Mesh();
 

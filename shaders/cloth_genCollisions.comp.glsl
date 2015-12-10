@@ -86,7 +86,7 @@ void main() {
     vec3 pos = pCloth1[idx].xyz;
 	vec3 lookAt = pCloth2[idx].xyz;
 
-    vec4 collisionConstraint = vec4(0.0, 0.0, 0.0, -1.0); // a bogus collisionConstraint
+    vec4 collisionConstraint = vec4(-1.0); // a bogus collisionConstraint
 
     // check against every triangle in the mesh. use the nearest collision
     for (int i = 0; i < numTriangles; i++) {
@@ -105,6 +105,8 @@ void main() {
     		collisionConstraint = vec4(norm, collisionT);
     	}
     }
-    if (collisionConstraint.w > 1.0 || collisionConstraint.w < 0.0) return; // collision is not between points over timestep
+    if (collisionConstraint.w > 1.0 || collisionConstraint.w < 0.0) {
+        collisionConstraint = vec4(-1.0); // collision is not between points over timestep
+    }
     pClothCollisionConstraints[idx] = collisionConstraint;
 }

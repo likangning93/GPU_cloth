@@ -58,6 +58,8 @@ Cloth::Cloth(string filename) : Mesh(filename) {
 
   // set up constraints
   generateConstraints();
+
+  color = glm::vec3(1.0f, 0.5f, 0.5f);
 }
 
 Cloth::~Cloth() {
@@ -153,9 +155,6 @@ void Cloth::generateConstraints() {
         glm::vec4 shaderConstraint;
         shaderConstraint[0] = currSet.thisIndex;
         shaderConstraint[1] = currSet.indices[j];
-		if (currSet.thisIndex == currSet.indices[j]) {
-			printf("glitch\n");
-		}
 		glm::vec4 p1 = initPositions.at(currSet.thisIndex);
 		glm::vec4 p2 = initPositions.at(currSet.indices[j]);
 		shaderConstraint[2] = glm::length(glm::vec3(p1.x, p1.y, p1.z) - 
@@ -198,8 +197,8 @@ void Cloth::generateConstraints() {
   glGenBuffers(1, &ssbo_externalConstraints);
   // buffer of external constraints. these are all bogus for now
   // make some fake external constraints for now
-  externalConstraints.push_back(glm::vec4(0, 0, -1.0, default_pin_K));
-  externalConstraints.push_back(glm::vec4(40, 40, -1.0, default_pin_K));
+  //externalConstraints.push_back(glm::vec4(0, 0, -1.0, default_pin_K));
+  //externalConstraints.push_back(glm::vec4(5, 5, -1.0, default_pin_K));
 
   // transfer
   uploadExternalConstraints();
@@ -230,6 +229,7 @@ void Cloth::uploadExternalConstraints() {
 
 	// allocate space for constraints on GPU
 	int numConstraints = externalConstraints.size();
+	if (numConstraints < 1) return;
 
 	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_externalConstraints);
 	glBufferData(GL_SHADER_STORAGE_BUFFER, numConstraints * sizeof(glm::vec4),

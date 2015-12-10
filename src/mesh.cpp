@@ -5,6 +5,8 @@ Mesh::Mesh(string filename) {
   // load things up
   buildGeomtery();
 
+  color = glm::vec3(0.6f);
+
   // build all the gl buffers and stuff
   glGenBuffers(1, &ssbo_pos);
   glGenBuffers(1, &idxbo);
