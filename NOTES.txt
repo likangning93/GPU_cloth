@@ -6,7 +6,7 @@
 TODO
 -clean the stuff used to find the barrier problem [done]
 -fix static collision [done!]
--we possibly need more edges to get a nice sim. like, do triangles instead of quads. -> see 563: edges used for constraints are triangular
+-we possibly need more edges to get a nice sim. like, Xs for each quad. [done]
 -get nonstatic collision
 -add animation system -> biggie
 -make meshes able to draw in different colors... big problem right now [done]

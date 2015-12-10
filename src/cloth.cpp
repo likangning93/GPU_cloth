@@ -69,12 +69,12 @@ Cloth::~Cloth() {
 struct constraintVertexIndices {
   int thisIndex = -1;
   int numConstraints = 0;
-  int indices[4];
+  int indices[NUM_INT_CON_BUFFERS];
 };
 
 void addConstraint(constraintVertexIndices &vert1, constraintVertexIndices &vert2) {
   // assess whether the constraints given already exist here or not
-  for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < NUM_INT_CON_BUFFERS; i++) {
     if (vert1.indices[i] == vert2.thisIndex) {
       return;
     }
@@ -84,11 +84,11 @@ void addConstraint(constraintVertexIndices &vert1, constraintVertexIndices &vert
   }
 
   // set up constraints on vert and influencer based on each other
-  if (vert1.numConstraints < 4) {
+	if (vert1.numConstraints < NUM_INT_CON_BUFFERS) {
     vert1.indices[vert1.numConstraints] = vert2.thisIndex;
     vert1.numConstraints++;
   }
-  if (vert2.numConstraints < 4) {
+	if (vert2.numConstraints < NUM_INT_CON_BUFFERS) {
     vert2.indices[vert2.numConstraints] = vert1.thisIndex;
     vert2.numConstraints++;
   }
@@ -105,9 +105,9 @@ void Cloth::generateConstraints() {
    made up of 2 constraints each.
    The obj is loaded such that each face is "half-edged," counterclockwise.
    1---2---5
-   |   |   |        N
+   |  \|/  |        N
    4---3---6  ->  W 3 E
-   |   |   |        S
+   |  /|\   |        S
    44--43--45
    So we need to generate a constraint for all edges specified by indices
    In addition, we need to generate constraints for all indices that don't have
@@ -130,10 +130,9 @@ void Cloth::generateConstraints() {
   for (int i = 0; i < numVertices; i++) {
     constraintVertexIndices emptyVert;
     emptyVert.thisIndex = i;
-    emptyVert.indices[0] = -1;
-    emptyVert.indices[1] = -1;
-    emptyVert.indices[2] = -1;
-    emptyVert.indices[3] = -1;
+	for (int j = 0; j < NUM_INT_CON_BUFFERS; j++) {
+		emptyVert.indices[j] = -1;
+	}
     constraintsPerVertex.push_back(emptyVert);
   }
   // Check every face and input the constraints per vertex.
@@ -144,13 +143,18 @@ void Cloth::generateConstraints() {
     addConstraint(constraintsPerVertex[face[1]], constraintsPerVertex[face[2]]);
     addConstraint(constraintsPerVertex[face[2]], constraintsPerVertex[face[3]]);
     addConstraint(constraintsPerVertex[face[3]], constraintsPerVertex[face[0]]);
+	if (NUM_INT_CON_BUFFERS > 4) {
+		// diagonal constraints
+		addConstraint(constraintsPerVertex[face[0]], constraintsPerVertex[face[2]]);
+		addConstraint(constraintsPerVertex[face[1]], constraintsPerVertex[face[3]]);
+	}
   }
 
   // deploy internal constraints and buffers
 
   for (int i = 0; i < numVertices; i++) {
     constraintVertexIndices currSet = constraintsPerVertex.at(i);
-    for (int j = 0; j < 4; j++) {
+	for (int j = 0; j < NUM_INT_CON_BUFFERS; j++) {
       if (currSet.indices[j] != -1) {
         glm::vec4 shaderConstraint;
         shaderConstraint[0] = currSet.thisIndex;
@@ -167,7 +171,7 @@ void Cloth::generateConstraints() {
 
   GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
 
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < NUM_INT_CON_BUFFERS; i++) {
     // gen buffer
 	glGenBuffers(1, &ssbo_internalConstraints[i]);
 

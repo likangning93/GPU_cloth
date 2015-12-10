@@ -1,6 +1,8 @@
 #pragma once
 #include "mesh.hpp"
 
+#define NUM_INT_CON_BUFFERS 8 // number of internal constraint buffers
+
 // holds pointers to everything for a Cloth object:
 // - (2) GL buffer for predicted positions
 // - (1) GL buffer for velocities
@@ -10,6 +12,7 @@
 class Cloth : public Mesh
 {
 public:
+	int numInternalConstraintBuffers = NUM_INT_CON_BUFFERS;
 
 	// positions will be vec4s: x, y, z, mass
 	// predicted positions will also be vec4s: x, y, z, invMass
@@ -22,7 +25,7 @@ public:
   // all constraints in these buffers are vec4s:
   // index of pos to modify, index of influencer, rest length, stiffness K
   // a negative rest length will indicate a "pin" constraint
-  GLuint ssbo_internalConstraints[4];
+  GLuint ssbo_internalConstraints[NUM_INT_CON_BUFFERS];
   GLuint ssbo_externalConstraints;
 
   GLuint ssbo_collisionConstraints;
@@ -32,7 +35,7 @@ public:
   float default_inv_mass = 441.0f;
 
   // these vec3 constraints are index, index, rest length
-  std::vector<glm::vec4> internalConstraints[4];
+  std::vector<glm::vec4> internalConstraints[NUM_INT_CON_BUFFERS];
   std::vector<glm::vec4> externalConstraints; // pins
 
   Cloth(string filename);

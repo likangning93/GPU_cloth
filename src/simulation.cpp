@@ -96,6 +96,7 @@ void Simulation::initComputeProgs() {
 	prog_ppd7_updateVelPos = initComputeProg("../shaders/cloth_ppd7_updatePositionsVelocities.comp.glsl");
 	glUseProgram(prog_ppd7_updateVelPos);
 	glUniform1f(0, timeStep);
+
 	
 	prog_copyBuffer = initComputeProg("../shaders/copy.comp.glsl");
 
@@ -168,7 +169,7 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred1);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
 
-		for (int j = 0; j < 4; j++) {
+		for (int j = 0; j < cloth->numInternalConstraintBuffers; j++) {
 			// bind inner constraints
 			int workGroupCountInnerConstraints = 
 				(cloth->internalConstraints[j].size() - 1) / WORK_GROUP_SIZE_ACC + 1;
