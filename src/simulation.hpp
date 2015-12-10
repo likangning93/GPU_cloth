@@ -19,7 +19,8 @@ public:
 	int numCloths;
 
 	int projectTimes = 10;
-	float timeStep = 0.016;
+	float timeStep = 0.016f;
+	float currentTime = 0.0f;
 	glm::vec3 Gravity = glm::vec3(0.0f, 0.0f, -0.98f);
 
 	float collisionBounceFactor = 0.2f;
@@ -36,10 +37,16 @@ public:
 	GLuint prog_genCollisionConstraints;
 	GLuint prog_projectCollisionConstraints;
 
+	GLuint prog_rigidbodyAnimate;
+
 	void initComputeProgs();
 	void genCollisionConstraints(Cloth *cloth, Rbody *rbody);
 	void stepSingleCloth(Cloth *cloth);
 	void stepSimulation();
+
+	void animateRbody(Rbody *rbody);
+
+	void selectByRaycast(glm::vec3 eye, glm::vec3 dir);
 
 	void retrieveBuffer(GLuint ssbo, int numItems);
 };

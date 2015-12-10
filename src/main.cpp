@@ -19,6 +19,9 @@ const float DT = 0.2f;
 
 Simulation *sim = NULL;
 
+int width = 1280;
+int height = 720;
+
 /**
  * C main function.
  */
@@ -54,8 +57,6 @@ bool init(int argc, char **argv) {
             << std::endl;
         return false;
     }
-    int width = 1280;
-    int height = 720;
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -69,6 +70,7 @@ bool init(int argc, char **argv) {
     }
     glfwMakeContextCurrent(window);
     glfwSetKeyCallback(window, keyCallback);
+	glfwSetMouseButtonCallback(window, clickCallback);
 
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
@@ -82,6 +84,21 @@ bool init(int argc, char **argv) {
     glEnableVertexAttribArray(attr_position);
     glVertexAttribPointer((GLuint) attr_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
     glBindVertexArray(0);
+
+	// Create and setup another VAO for drawing
+	glGenVertexArrays(1, &wireVAO);
+	glBindVertexArray(wireVAO);
+	glEnableVertexAttribArray(attr_position);
+	glVertexAttribPointer((GLuint)attr_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindVertexArray(0);
+
+	// create and set up raycast SSBO
+	glGenBuffers(1, &raycastSSBO);
+	glGenBuffers(1, &raycastIDXBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, raycastIDXBO);
+	int indices[2] = { 0, 1 };
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * sizeof(GLuint),
+		&indices[0], GL_STATIC_DRAW);
 
 	glm::vec3 cameraPosition;
 	cameraPosition.x = zoom * sin(phi) * sin(theta);
@@ -97,9 +114,10 @@ bool init(int argc, char **argv) {
 
 	// Initialize simulation
 	std::vector<string> colliders;
-	colliders.push_back("meshes/floor.obj");
-	//colliders.push_back("meshes/low_poly_bear.obj");
+	//colliders.push_back("meshes/floor.obj");
+	colliders.push_back("meshes/low_poly_bear.obj");
 	//colliders.push_back("meshes/semi_smooth_cube.obj");
+	//colliders.push_back("meshes/cube.obj");
 
 	std::vector<string> cloths;
 	//cloths.push_back("meshes/floor.obj");
@@ -127,6 +145,16 @@ void initShaders(GLuint * program) {
 	glUseProgram(program[PROG_CLOTH]);
 
 	if ((location = glGetUniformLocation(program[PROG_CLOTH], "u_projMatrix")) != -1) {
+		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
+	}
+
+	program[PROG_WIRE] = glslUtility::createProgram(
+		"shaders/wire.vert.glsl",
+		"shaders/wire.geom.glsl",
+		"shaders/wire.frag.glsl", attributeLocations, 1);
+	glUseProgram(program[PROG_WIRE]);
+
+	if ((location = glGetUniformLocation(program[PROG_WIRE], "u_projMatrix")) != -1) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
 	}
 
@@ -205,12 +233,23 @@ void drawMesh(Mesh *drawMe) {
 
   glDrawElements(GL_TRIANGLES, drawMe->indicesTris.size(), GL_UNSIGNED_INT, 0);
 
-  checkGLError("visualize");
+  //checkGLError("visualize");
 }
 
 void errorCallback(int error, const char *description) {
     fprintf(stderr, "error %d: %s\n", error, description);
 }
+
+void clickCallback(GLFWwindow* window, int button, int action, int mods)
+{
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		//printf("%f %f\n", xpos, ypos);
+		sim->selectByRaycast(cameraPosition, rayCast(xpos, ypos, width, height));
+	}
+}
+
 
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {
@@ -261,10 +300,10 @@ void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods
 		stepFrames = !stepFrames;
 	}
 	updateCamera();
+	//drawRaycast();
 }
 
 void updateCamera() {
-	glm::vec3 cameraPosition;
 	cameraPosition.x = zoom * sin(phi) * sin(theta);
 	cameraPosition.z = zoom * cos(theta);
 	cameraPosition.y = zoom * cos(phi) * sin(theta);
@@ -282,4 +321,53 @@ void updateCamera() {
 	if ((location = glGetUniformLocation(program[PROG_CLOTH], "u_projMatrix")) != -1) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
 	}
+	glUseProgram(program[PROG_WIRE]);
+	if ((location = glGetUniformLocation(program[PROG_WIRE], "u_projMatrix")) != -1) {
+		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
+	}
+}
+
+glm::vec3 rayCast(int x, int y, int width, int height) {
+	updateCamera();
+	float sx = (2.0f * (float)x / (float)width) - 1.0f;
+	float sy = 1.0f - (2.0f * (float)y / (float)height);
+	glm::vec3 up = glm::vec3(0.0, 0.0, 1.0);
+	glm::vec3 F = glm::normalize(cameraPosition - lookAt);
+	glm::vec3 R = glm::normalize(cross(up, F));
+	glm::vec3 U = glm::normalize(cross(F, R));
+
+	float aspect = (float)x / (float)width;
+
+	float len = glm::length(lookAt - cameraPosition);
+	float tanAlpha = tan(fovy * (PI / 180.0f) / 2.0f);
+	glm::vec3 V = U * len * tanAlpha;
+	glm::vec3 H = R * len * aspect * tanAlpha;
+	glm::vec3 p = lookAt + sx * H + sy * V;
+
+	// upload and draw the raycast
+	GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, raycastSSBO);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, 2 * sizeof(glm::vec4),
+		NULL, GL_STREAM_COPY);
+
+	glm::vec4 *pos = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
+		0, 2 * sizeof(glm::vec4), bufMask);
+	pos[0] = glm::vec4(cameraPosition, 1.0);
+	pos[1] = glm::vec4(cameraPosition + lookAt * 10000.0f, 1.0f);
+	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+	//drawRaycast();
+
+	return glm::normalize(p - cameraPosition);
+}
+
+void drawRaycast() {
+	glUseProgram(program[PROG_WIRE]);
+	glBindVertexArray(wireVAO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, raycastIDXBO);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, raycastSSBO);
+
+	glDrawElements(GL_LINES, 2, GL_UNSIGNED_INT, 0);
+	//glDrawArrays(GL_LINES, 0, 2);
+	checkGLError("raycast draw");
 }

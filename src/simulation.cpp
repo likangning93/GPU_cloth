@@ -105,6 +105,8 @@ void Simulation::initComputeProgs() {
 	prog_projectCollisionConstraints = initComputeProg("../shaders/cloth_projectCollisions.comp.glsl");
 	glUseProgram(prog_projectCollisionConstraints);
 	glUniform1f(1, collisionBounceFactor);
+
+	prog_rigidbodyAnimate = initComputeProg("../shaders/rigidbody_animate.comp.glsl");
 }
 
 void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
@@ -112,6 +114,7 @@ void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
 	glUseProgram(prog_genCollisionConstraints);
 	glUniform1i(0, rbody->indicesTris.size() / 3);
 	glUniform1i(1, numVertices);
+	glUniform1f(2, cloth->default_static_constraint_bounce);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, rbody->ssbo_pos);
@@ -123,7 +126,7 @@ void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-	retrieveBuffer(cloth->ssbo_debug, 81);
+	//retrieveBuffer(cloth->ssbo_debug, 81);
 }
 
 void Simulation::stepSingleCloth(Cloth *cloth) {
@@ -267,8 +270,32 @@ void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
 }
 
+void Simulation::animateRbody(Rbody *rbody) {
+	glm::mat4 tf = rbody->getTransformationAtTime(currentTime);
+	int numVertices = rbody->initPositions.size();
+	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
+
+	glUseProgram(prog_rigidbodyAnimate);
+	glUniform1i(0, numVertices);
+	glUniformMatrix4fv(1, 1, GL_FALSE, &tf[0][0]);
+
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, rbody->ssbo_initPos);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, rbody->ssbo_pos);
+	glDispatchCompute(workGroupCount_vertices, 1, 1);
+	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+}
+
 void Simulation::stepSimulation() {
+	for (int i = 0; i < numRigids; i++) {
+		animateRbody(rigids.at(i));
+	}
+
 	for (int i = 0; i < numCloths; i++) {
 		stepSingleCloth(cloths.at(i));
 	}
+	currentTime += timeStep;
+}
+
+void Simulation::selectByRaycast(glm::vec3 eye, glm::vec3 dir) {
+	cout << dir.x << " " << dir.y << " " << dir.z << endl;
 }

@@ -1,5 +1,9 @@
 12/10/2015
 
+Kai:
+-a VAO basically stores all the buffers bound to it
+-in games, every object has a VAO with bound buffers so when you draw you don't have to keep rebinding
+
 TODO:
 -add animation system -> biggie, what do?
 	-not enough time to do a full weighted mesh loader
@@ -8,8 +12,13 @@ TODO:
 		-unless... we wrote a really lousy FBX ascii parser that only gets vertices and skin weights -> doable?
 	-bvh loader and player: http://www.gamedev.net/page/resources/_/technical/game-programming/bvh-file-loading-and-displaying-r3295
 	-alternatively, for now just load a series of transformations and use them to keyframe a single mesh -> return of the low-poly panda
+-ok. basic animation system TODO:
+	-add transformation state to rbody [done]
+	-add a "get matrix at time" method [done]
+	-add a shader that transforms the mesh based on this new transformation
+	-give the mesh an "init positions" ssbo to go with the "positions" ssbo
 
--get nonstatic collision
+-get nonstatic collision [done enough to wear a dress]
 	-one idea: add static collision handling -> not so bad, just another shader stage or a modification to the existing one. also, we need this pretty bad
 		-way we're doing continuous collision handling: store a normal and a distance. distance + knowledge of old/new positions lets you compute entry point
 		-static collision works by requiring a point that you move towards along with a normal. point isn't necessarily in the moving direction
@@ -38,9 +47,10 @@ TODO:
 
 -TODO as an analysis maybe? add a stage to precompute and cache all the normals so you don't have to calculate them in collision checking.
 
--add a good way to pin things besides hardcoding indices
+-add a good way to pin things besides hardcoding indices -> may have to just wait
 	-would involve transferring back to CPU and raycasting, which is ok
 	-add drawing for pins -> so you can turn them off
+	-would involve a struct for pins. would need to run external constraints at most once per every mesh/cloth combo
 
 
 12/09/2015

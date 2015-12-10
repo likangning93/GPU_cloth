@@ -82,7 +82,7 @@ void Mesh::placeToken(string token, ifstream *myfile) {
     if (token.compare(0, 1, "v") == 0)
     {
       token.erase(0, 2); // we'll assume v x y z, so erase v and whitespace space
-      initPositions.push_back(glm::vec4(parseOneVec3(token), 0.0));
+      initPositions.push_back(glm::vec4(parseOneVec3(token), 1.0));
       return;
     }
 

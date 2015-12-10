@@ -12,10 +12,13 @@ layout(std430, binding = 1) buffer _animPos { // transformed position
     vec4 animPos[];
 };
 
-// TODO: figure out how to pass in matrices and weights
+layout(location = 0) uniform int numVertices;
+layout(location = 1) uniform mat4 modelMatrix;
 
 layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
     uint idx = gl_GlobalInvocationID.x;
+    if (idx >= numVertices) return;
+    animPos[idx] = modelMatrix * initPos[idx];
 }

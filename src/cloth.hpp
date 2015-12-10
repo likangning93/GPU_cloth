@@ -33,6 +33,7 @@ public:
   float default_internal_K = 0.9f;
   float default_pin_K = 1.0f;
   float default_inv_mass = 441.0f;
+  float default_static_constraint_bounce = 0.1f;
 
   // these vec3 constraints are index, index, rest length
   std::vector<glm::vec4> internalConstraints[NUM_INT_CON_BUFFERS];

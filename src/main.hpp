@@ -20,10 +20,15 @@
 GLuint attr_position = 0;
 const char *attributeLocations[] = { "Position" };
 GLuint drawingVAO = 0;
+GLuint wireVAO = 0;
 GLuint displayImage;
 GLuint program[2];
 
+GLuint raycastSSBO;
+GLuint raycastIDXBO;
+
 const unsigned int PROG_CLOTH = 0; // program for rendering cloth
+const unsigned int PROG_WIRE = 1; // program for rendering wireframes, like for raycasting
 
 const float fovy = (float) (PI / 4);
 const float zNear = 0.10f;
@@ -34,6 +39,7 @@ float theta = 1.22f;
 float phi = -0.65f;
 float zoom = 5.0f;
 glm::vec3 lookAt = glm::vec3(0.0f, 0.0f, 0.0f);
+glm::vec3 cameraPosition;
 
 bool pause = true;
 bool stepFrames = false;
@@ -53,7 +59,10 @@ void mainLoop();
 void drawMesh(Mesh *drawMe);
 void errorCallback(int error, const char *description);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
+void clickCallback(GLFWwindow* window, int button, int action, int mods);
 void updateCamera();
+glm::vec3 rayCast(int x, int y, int width, int height);
+void drawRaycast();
 
 //====================================
 // Setup/init Stuff

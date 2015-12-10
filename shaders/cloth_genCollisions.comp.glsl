@@ -28,6 +28,7 @@ layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1
 
 layout(location = 0) uniform int numTriangles;
 layout(location = 1) uniform int numPositions;
+layout(location = 2) uniform float staticConstraintBounce;
 
 vec3 nearestPointOnTriangle(vec3 pos, vec3 v0, vec3 v1, vec3 v2)
 {
@@ -73,7 +74,7 @@ vec3 nearestPointOnTriangle(vec3 pos, vec3 v0, vec3 v1, vec3 v2)
     return nearest;
 }
 
-void generateStaticConstraint(vec3 pos, vec3 lookAt) {
+void generateStaticConstraint(vec3 pos) {
     uint idx = gl_GlobalInvocationID.x;
 
     // static constraint: generate a "point of entry" approximating the closest
@@ -108,7 +109,7 @@ void generateStaticConstraint(vec3 pos, vec3 lookAt) {
     }
 
     // move the position in the last timestep over to nearestPoint
-    pCloth1[idx].xyz = nearestPoint;
+    pCloth1[idx].xyz = nearestPoint + nearestNormal * staticConstraintBounce;
     pClothCollisionConstraints[idx] = vec4(nearestNormal, 1.0);
     return;
 }
@@ -215,8 +216,8 @@ void main() {
     // if the number of collisions is odd (we are inside the mesh)
     // generate a static constraint instead.
     if (numCollisions % 2 > 0) {
-        //pCloth2[idx].xyz = vec3(0.0, 0.0, 3.0);
-        generateStaticConstraint(pos, lookAt);
+        //pCloth2[idx].xyz = debugPosition;
+        generateStaticConstraint(pos);
         return;
     }
 
