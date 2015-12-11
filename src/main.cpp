@@ -14,6 +14,7 @@
 // ================
 
 #define VISUALIZE 1
+#define PERFORMANCE 0 // analyze performance?
 
 const float DT = 0.2f;
 
@@ -111,25 +112,31 @@ bool init(int argc, char **argv) {
     projection = projection * view;
 
     initShaders(program);
-
-	// Initialize simulation
 	std::vector<string> colliders;
+	std::vector<string> cloths;
+#if !PERFORMANCE
+	// Initialize a fun simulation
 	colliders.push_back("meshes/low_poly_bear.obj");
 	colliders.push_back("meshes/floor.obj");
 	//colliders.push_back("meshes/semi_smooth_cube.obj");
 	//colliders.push_back("meshes/cube.obj");
 
-	std::vector<string> cloths;
-	cloths.push_back("meshes/dress.obj");
 	cloths.push_back("meshes/cape.obj");
+	cloths.push_back("meshes/dress.obj");
 	//cloths.push_back("meshes/20x20cloth.obj");
 	//cloths.push_back("meshes/3x3cloth.obj");
-	//cloths.push_back("meshes/bear_cloth.obj");
+	cloths.push_back("meshes/bear_cloth.obj");
 	//cloths.push_back("meshes/small_bear_cloth.obj");
+#endif
+#if PERFORMANCE
+	colliders.push_back("meshes/perf/ball_386.obj");
+	cloths.push_back("meshes/perf/cloth_529.obj");
+	pause = false;
+#endif
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
-
+#if !PERFORMANCE
 	// let's generate some clothespins!
 	int bearLeftShoulder = 779;
 	int bearRightShoulder = 1578;
@@ -140,16 +147,17 @@ bool init(int argc, char **argv) {
 	// SSBOs for cape
 	int capeLeftShoulder = 1;
 	int capeRightShoulder = 0;
-	sim->cloths.at(1)->addPinConstraint(capeLeftShoulder, bearLeftShoulder, bearSSBO);
-	sim->cloths.at(1)->addPinConstraint(capeRightShoulder, bearRightShoulder, bearSSBO);
-	sim->cloths.at(1)->color = glm::vec3(0.5f, 1.0f, 1.0f);
+	sim->cloths.at(0)->addPinConstraint(capeLeftShoulder, bearLeftShoulder, bearSSBO);
+	sim->cloths.at(0)->addPinConstraint(capeRightShoulder, bearRightShoulder, bearSSBO);
+	sim->cloths.at(0)->color = glm::vec3(0.5f, 1.0f, 1.0f);
 
 	// SSBOs for dress
 	int dressLeftShoulder = 14;
 	int dressRightShoulder = 13;
-	sim->cloths.at(0)->addPinConstraint(dressLeftShoulder, bearLeftShoulder, bearSSBO);
-	sim->cloths.at(0)->addPinConstraint(dressRightShoulder, bearRightShoulder, bearSSBO);
-
+	sim->cloths.at(1)->addPinConstraint(dressLeftShoulder, bearLeftShoulder, bearSSBO);
+	sim->cloths.at(1)->addPinConstraint(dressRightShoulder, bearRightShoulder, bearSSBO);
+	sim->cloths.at(1)->color = glm::vec3(1.0f, 0.5f, 0.5f);
+#endif
     glEnable(GL_DEPTH_TEST);
 
     return true;
@@ -177,7 +185,7 @@ void initShaders(GLuint * program) {
 	if ((location = glGetUniformLocation(program[PROG_WIRE], "u_projMatrix")) != -1) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
 	}
-
+	updateCamera();
 	checkGLError("init shaders");
 }
 
@@ -340,6 +348,9 @@ void updateCamera() {
 	glUseProgram(program[PROG_CLOTH]);
 	if ((location = glGetUniformLocation(program[PROG_CLOTH], "u_projMatrix")) != -1) {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
+	}
+	if ((location = glGetUniformLocation(program[PROG_CLOTH], "u_camLight")) != -1) {
+		glUniform3fv(location, 1, &cameraPosition[0]);
 	}
 	glUseProgram(program[PROG_WIRE]);
 	if ((location = glGetUniformLocation(program[PROG_WIRE], "u_projMatrix")) != -1) {

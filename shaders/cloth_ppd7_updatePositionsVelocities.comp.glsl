@@ -3,7 +3,7 @@
 #extension GL_ARB_shader_storage_buffer_object: enable
 
 // TODO: change work group size here and in nbody.cpp
-#define WORK_GROUP_SIZE_ACC 16
+#define WORK_GROUP_SIZE_ACC 32
 
 layout(std430, binding = 0) buffer _Vel { // velocities
     vec4 Vel[];

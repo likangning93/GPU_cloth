@@ -25,11 +25,11 @@ Mesh::Mesh(string filename) {
   glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
     &initPositions[0], GL_STREAM_COPY);
 
-  // debug buffer
-  glGenBuffers(1, &ssbo_debug);
-  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_debug);
-  glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
-	  NULL, GL_STREAM_COPY);
+//  // debug buffer
+//  glGenBuffers(1, &ssbo_debug);
+//  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_debug);
+//  glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
+//	  NULL, GL_STREAM_COPY);
 
   //glm::vec4 *pos = (glm::vec4 *) glMapBufferRange(GL_SHADER_STORAGE_BUFFER,
   //  0, positionCount * sizeof(glm::vec4), bufMask);

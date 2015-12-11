@@ -21,7 +21,7 @@ public:
   string filename;
   GLuint ssbo_pos; // shader storage buffer object -> holds positions
   GLuint idxbo; // index buffer
-  GLuint ssbo_debug; // ssbo for storing debug info
+  //GLuint ssbo_debug; // ssbo for storing debug info
 
   vector<glm::vec4> initPositions;
   vector<glm::ivec4> indicesQuads;

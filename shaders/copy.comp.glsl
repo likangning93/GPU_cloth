@@ -3,7 +3,7 @@
 #extension GL_ARB_shader_storage_buffer_object: enable
 
 // TODO: change work group size here and in nbody.cpp
-#define WORK_GROUP_SIZE_VELPOS 16
+#define WORK_GROUP_SIZE_VELPOS 32
 
 layout(std430, binding = 0) readonly buffer _pPos1 { // predicted position
     vec4 pPos1[];

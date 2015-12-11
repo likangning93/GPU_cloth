@@ -3,8 +3,7 @@
 
 // TODO: perform timing experiments, based on work group size.
 // You must ALSO change the work group size in the compute shaders.
-#define WORK_GROUP_SIZE_ACC 16
-#define WORK_GROUP_SIZE_VELPOS 16
+#define WORK_GROUP_SIZE 32
 
 #define DEBUG_VERBOSE 0
 
@@ -120,9 +119,9 @@ void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, rbody->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, rbody->ssbo_triangles);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, cloth->ssbo_collisionConstraints);
-	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, cloth->ssbo_debug);
+	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, cloth->ssbo_debug);
 
-	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
+	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE + 1;
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
@@ -131,7 +130,7 @@ void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
 
 void Simulation::stepSingleCloth(Cloth *cloth) {
 	int numVertices = cloth->initPositions.size();
-	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
+	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE + 1;
 
 	/* compute new velocities with external forces */
 	glUseProgram(prog_ppd1_externalForces);
@@ -158,7 +157,7 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 
 	/* update inverse masses */
 	int numPinConstraints = cloth->externalConstraints.size();
-	int workGroupCountPinConstraints = (numPinConstraints - 1) / WORK_GROUP_SIZE_ACC + 1;
+	int workGroupCountPinConstraints = (numPinConstraints - 1) / WORK_GROUP_SIZE + 1;
 	glUseProgram(prog_ppd4_updateInvMass);
 	glUniform1i(0, numPinConstraints);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred1);
@@ -180,7 +179,7 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		for (int j = 0; j < cloth->numInternalConstraintBuffers; j++) {
 			// bind inner constraints
 			int workGroupCountInnerConstraints = 
-				(cloth->internalConstraints[j].size() - 1) / WORK_GROUP_SIZE_ACC + 1;
+				(cloth->internalConstraints[j].size() - 1) / WORK_GROUP_SIZE + 1;
 			glUniform1i(1, cloth->internalConstraints[j].size());
 
 			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_internalConstraints[j]);
@@ -281,7 +280,7 @@ void Simulation::animateRbody(Rbody *rbody) {
 	if (rbody->animated == false) return;
 	glm::mat4 tf = rbody->getTransformationAtTime(currentTime);
 	int numVertices = rbody->initPositions.size();
-	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
+	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE + 1;
 
 	glUseProgram(prog_rigidbodyAnimate);
 	glUniform1i(0, numVertices);

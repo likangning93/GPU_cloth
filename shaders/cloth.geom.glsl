@@ -10,7 +10,7 @@ in vec3 worldPos0[3];
 // http://stackoverflow.com/questions/19346019/calculate-normals-geometry-shader
 
 out vec3 normal;
-//out vec3 worldPos;
+out vec3 worldPos;
 
 void main() {
 
@@ -22,7 +22,7 @@ void main() {
             vec3 Position = gl_in[i].gl_Position.xyz;
    			gl_Position = u_projMatrix * vec4(Position, 1.0);
             normal = n;
-            //worldPos = worldPos0;
+            worldPos = worldPos0[i];
             EmitVertex();
         }
 }
