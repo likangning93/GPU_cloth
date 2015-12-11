@@ -1,3 +1,10 @@
+// cloth constraints are vec4s as follows:
+// x: index of position to be projected onto
+// y: index of position influencing x
+// z: rest length. a rest length of -1 indicates a pin constraint.
+// w: SSBO_ID of influencer
+
+
 #version 430 core
 #extension GL_ARB_compute_shader: enable
 #extension GL_ARB_shader_storage_buffer_object: enable
@@ -20,6 +27,10 @@ layout(location = 0) uniform float N; // number of times to project
 
 layout(location = 1) uniform int numConstraints;
 
+layout(location = 2) uniform float K; // PBD spring constant
+
+layout(location = 3) uniform int SSBO_ID; // the ID of the SSBO providing pModify
+
 layout(local_size_x = WORK_GROUP_SIZE_ACC, local_size_y = 1, local_size_z = 1) in;
 
 void main() {
@@ -31,10 +42,11 @@ void main() {
 
     // compute force contribution from this constraint
     vec4 constraint = Constraints[idx];
-    float K = constraint.w;
     
     highp int targetIdx = int(constraint.x); // index of "target" -> the position to be modified
     highp int influenceIdx = int(constraint.y); // index of "influencer" -> the particle doing the pulling
+    highp int constraintSSBO = int(constraint.w); // ID of the ssbo this constraint is intended for
+    if (constraintSSBO != SSBO_ID) return; // do not evaluate, this is not the right SSBO
 
     if (constraint.x < 0.0 || constraint.y < 0.0) { // bogus influence
         return;

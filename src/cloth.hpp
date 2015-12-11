@@ -37,10 +37,13 @@ public:
 
   // these vec3 constraints are index, index, rest length
   std::vector<glm::vec4> internalConstraints[NUM_INT_CON_BUFFERS];
-  std::vector<glm::vec4> externalConstraints; // pins
+  std::vector<glm::vec4> externalConstraints; // pin
+
+  std::vector<GLuint> pinnedSSBOs; // SSBOs that this is pinned to
 
   Cloth(string filename);
   ~Cloth();
+  void addPinConstraint(int thisIdx, int otherIdx, GLuint SSBO_ID);
   void uploadExternalConstraints(); // upload all determined constraints.
 
 private:

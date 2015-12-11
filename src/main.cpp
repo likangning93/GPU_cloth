@@ -123,9 +123,9 @@ bool init(int argc, char **argv) {
 	//cloths.push_back("meshes/floor.obj");
 	//cloths.push_back("meshes/20x20cloth.obj");
 	//cloths.push_back("meshes/3x3cloth.obj");
-	cloths.push_back("meshes/bear_cloth.obj");
+	//cloths.push_back("meshes/bear_cloth.obj");
 	//cloths.push_back("meshes/small_bear_cloth.obj");
-	//cloths.push_back("meshes/dress.obj");
+	cloths.push_back("meshes/dress.obj");
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
@@ -246,7 +246,7 @@ void clickCallback(GLFWwindow* window, int button, int action, int mods)
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
 		//printf("%f %f\n", xpos, ypos);
-		sim->selectByRaycast(cameraPosition, rayCast(xpos, ypos, width, height));
+		//sim->selectByRaycast(cameraPosition, rayCast(xpos, ypos, width, height));
 	}
 }
 
@@ -326,7 +326,7 @@ void updateCamera() {
 		glUniformMatrix4fv(location, 1, GL_FALSE, &projection[0][0]);
 	}
 }
-
+/*
 glm::vec3 rayCast(int x, int y, int width, int height) {
 	updateCamera();
 	float sx = (2.0f * (float)x / (float)width) - 1.0f;
@@ -371,3 +371,4 @@ void drawRaycast() {
 	//glDrawArrays(GL_LINES, 0, 2);
 	checkGLError("raycast draw");
 }
+*/

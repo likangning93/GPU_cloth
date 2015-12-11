@@ -52,6 +52,22 @@ TODO:
 	-add drawing for pins -> so you can turn them off
 	-would involve a struct for pins. would need to run external constraints at most once per every mesh/cloth combo
 
+-ok. need to change constraints so they don't include K and instead have a mesh ID in w
+-this mesh ID will indicate whether or not the shader should evaluate the constraint right now
+-mesh ID to evaluate must be passed into the shader as a uniform then
+-cloth must keep track of which SSBOs it is pinned to -> vector of GLuints
+-all internal constraints will have the mesh's SSBO value as identity
+-all external constraints will have other meshes' SSBO values as identity
+
+TODO:
+-modify shader to once again take in K, take in a mesh ID, and eval based on that [done]
+-modify shader invoking code to provide K and mesh ID [done]
+-add "pinned to me" vector and handling to cloth [done]
+-add "pinned to this cloth" handling to per-cloth handler [done]
+-try pinning by raycasting again? -> other option is to ctrl-F point coordinates using blender. also ok.
+-or write a little method that generates shoulder pins for clothes
+
+
 
 12/09/2015
 -confirmed: compute shader memory can be incoherent: https://www.opengl.org/wiki/Memory_Model

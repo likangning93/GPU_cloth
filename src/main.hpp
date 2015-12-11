@@ -61,8 +61,8 @@ void errorCallback(int error, const char *description);
 void keyCallback(GLFWwindow* window, int key, int scancode, int action, int mods);
 void clickCallback(GLFWwindow* window, int button, int action, int mods);
 void updateCamera();
-glm::vec3 rayCast(int x, int y, int width, int height);
-void drawRaycast();
+//glm::vec3 rayCast(int x, int y, int width, int height);
+//void drawRaycast();
 
 //====================================
 // Setup/init Stuff

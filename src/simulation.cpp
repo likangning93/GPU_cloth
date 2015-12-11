@@ -174,6 +174,8 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		// bind predicted positions input/output
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos_pred1);
 		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2);
+		glUniform1f(2, cloth->default_internal_K); // uniform K
+		glUniform1i(3, cloth->ssbo_pos_pred1); // send the identity of the influencing SSBO
 
 		for (int j = 0; j < cloth->numInternalConstraintBuffers; j++) {
 			// bind inner constraints
@@ -189,12 +191,17 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 		}
 
 		// project pin constraints
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->ssbo_pos); // init positions, not pred 1
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2); // update this
-		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_externalConstraints);
-		glUniform1i(1, numPinConstraints);
-		glDispatchCompute(workGroupCountPinConstraints, 1, 1);
-		glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		int numPinnedSSBOs = cloth->pinnedSSBOs.size();
+		for (int i = 0; i < numPinnedSSBOs; i++) {
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, cloth->pinnedSSBOs.at(i)); // init positions, not pred 1
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, cloth->ssbo_pos_pred2); // update this
+			glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, cloth->ssbo_externalConstraints);
+			glUniform1i(1, cloth->externalConstraints.size());
+			glUniform1f(2, cloth->default_pin_K); // uniform K
+			glUniform1i(3, (int)cloth->pinnedSSBOs.at(i)); // send the identity of the influencing SSBO
+			glDispatchCompute(workGroupCountPinConstraints, 1, 1);
+			glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+		}
 
 		// ffwd pred1 to match pred2
 		glUseProgram(prog_copyBuffer); // TODO: lol... THIS IS DUMB DO SOMETHING BETTER

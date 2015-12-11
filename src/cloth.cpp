@@ -163,7 +163,6 @@ void Cloth::generateConstraints() {
 		glm::vec4 p2 = initPositions.at(currSet.indices[j]);
 		shaderConstraint[2] = glm::length(glm::vec3(p1.x, p1.y, p1.z) - 
 			glm::vec3(p2.x, p2.y, p2.z));
-		shaderConstraint[3] = default_internal_K;
 		internalConstraints[j].push_back(shaderConstraint);
       }
     }
@@ -186,6 +185,8 @@ void Cloth::generateConstraints() {
       0, numConstraints * sizeof(glm::vec4), bufMask);
 
     for (int j = 0; j < numConstraints; j++) {
+		// all internal constraints use ssbo_pos_pred1 as their influencer
+		internalConstraints[i].at(j).w = (float) ssbo_pos_pred1;
 		constraintsMapped[j] = internalConstraints[i].at(j);
     }
     glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -197,15 +198,14 @@ void Cloth::generateConstraints() {
   This is necessary for the step in which we update the inverse masses.
   *****************************************************************************/
 
-  // do the external constraints (pins)
+  // make bufer for the external constraints (pins)
   glGenBuffers(1, &ssbo_externalConstraints);
-  // buffer of external constraints. these are all bogus for now
-  // make some fake external constraints for now
-  //externalConstraints.push_back(glm::vec4(0, 0, -1.0, default_pin_K));
-  //externalConstraints.push_back(glm::vec4(40, 40, -1.0, default_pin_K));
+  // these are constraints for bear_cloth to pin to its initial position
+  //addPinConstraint(0, 0, ssbo_pos);
+  //addPinConstraint(40, 40, ssbo_pos);
 
   // transfer
-  uploadExternalConstraints();
+  //uploadExternalConstraints();
 
   /*****************************************************************************
    Collision constraints need to be handled a little differently and will have
@@ -226,6 +226,17 @@ void Cloth::generateConstraints() {
 	  constraintsMapped[j] = bogus;
   }
   glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
+}
+
+void Cloth::addPinConstraint(int thisIdx, int otherIdx, GLuint SSBO_ID) {
+	externalConstraints.push_back(glm::vec4(thisIdx, otherIdx, -1.0, (int)SSBO_ID));
+	uploadExternalConstraints();
+	// search the current SSBO list to see if we need to add this one
+	int numPinnedSSBOs = pinnedSSBOs.size();
+	for (int i = 0; i < numPinnedSSBOs; i++) {
+		if (pinnedSSBOs.at(i) == SSBO_ID) return;
+	}
+	pinnedSSBOs.push_back(SSBO_ID);
 }
 
 void Cloth::uploadExternalConstraints() {
