@@ -35,23 +35,23 @@ Constraints come in two varieties:
 - collision constraints: [normal of collision point, parametric distance to collision point]
 
 I broke down each PBD "stage" into its own shader, along with a few more. They are as follows:
-1) compute the influence of external forces on each vertex's velocity
-- parallelized by vertex
-2) damp the velocities
-- currently only basic damping, a multiplier on linear velocities
-- damping that preserves rotational momentum would probably require compute shader stream compaction, a whole additional stage
-- parallelized by vertex
-3) generate position predictions for PBD to fix based on the updated velocities
-- parallelized by vertex
-4) update masses to conform with constraints
-- vertices that are "pinned" are given "infinite mass," or 0 inverse mass
-- this way they cannot be moved by their other spring constraints
-5) use PBD to "fix" the positions for some number of repititions
-- parallelized by constraint - in my current system each cloth particle may be influenced by up to 8 such constraints
-6) generate and resolve collision constraints
-- parallelized by vertex - each vertex may only have a single collision constraint at a given time
-7) update the positions and velocities for the next time step
-- parallelized per vertex
+1. compute the influence of external forces on each vertex's velocity
+	- parallelized by vertex
+2. damp the velocities
+	- currently only basic damping, a multiplier on linear velocities
+	- damping that preserves rotational momentum would probably require compute shader stream compaction, a whole additional stage
+	- parallelized by vertex
+3. generate position predictions for PBD to fix based on the updated velocities
+	- parallelized by vertex
+4. update masses to conform with constraints
+	- vertices that are "pinned" are given "infinite mass," or 0 inverse mass
+	- this way they cannot be moved by their other spring constraints
+5. use PBD to "fix" the positions for some number of repititions
+	- parallelized by constraint - in my current system each cloth particle may be influenced by up to 8 such constraints
+6. generate and resolve collision constraints
+-	 parallelized by vertex - each vertex may only have a single collision constraint at a given time
+7. update the positions and velocities for the next time step
+	- parallelized per vertex
 
 ## Performance Analysis
 I performed 3 types of tests for performance analysis:
@@ -86,6 +86,21 @@ Varying the work group size does not seem to produce a trend in the actual dispa
 It should be noted that the times recorded were all taken from NSIGHT's statistics on "time spent in the OpenGL API." This could mean that the time does not just include the time that the GPU takes to run a computation but also the additional time it takes to launch a compute shader invocation. If this is the case it is possible that these invocation launches are swallowing up the actual GPU compute times, resulting in the consistencies seen in dispatch times. This could also explain the seemingly trendless GPU utilization data.
 
 ## Tips and Tricks
+
+### Compute Shader Caveats
+I had to learn a couple things about compute shaders through perplexing bugs that I had not anticipated.
+- shader storage buffer objects expect data provided in blocks of 4, which meant all data had to be uploaded as vec4s no matter if the shaders themselves interpreted data as vec3s or single floats.
+	- this eventually proved to be helpful for storing constraints, as well as weights within positions
+	- however, before I figured this out my positions would get rotated in unpredictable ways
+- compute shader invocations operate on "incoherent" memory - that is, if a compute shader is launched that modifies some SSBO of data and another compute shader is launched right after, the second shader will not "wait" until the first is done with the SSBO before starting and possibly trying to use the data in that SSBO.  	- adding glMemoryBarriers resolves this problem
+	- see milestone 3 for more details on the bug that led to this learning
+
+### Getting around race conditions with parallelizing by constraint
+I noted in the pipeline overview above that the stage at which a vertex is corrected by its constraints is parallelized by constraint. Naive parallelization creates a problem: if a vertex has 8 constraints and each is trying to apply a correction to it at the same time, which one wins? One solution would be memory locks or atomics. However, atomics in OpenGL are only available for integers, and memory locks create performance issues as they must be evaluated at runtime. The solution I came up with was to build 8 buffers of internal constraints for each cloth such that each buffer only contains constraints that work on different points. With large enough cloths, these 8 buffers would be large enough that each one alone would still saturate the GPU hardware while avoiding race conditions.
+
+### Ping-Ponging buffers
+PBD's constraints constrain a vertex by assessing the positions of its neighbors. However, simlar to above, consider a constraint solving a vertex that needs to look at a neighbore that some other constraints are solving in parallel. Whether or not this constraint will solve its vertex in the same way every time is thus uncertain - it might execute before or after the neighboring position has been corrected. An easy solution to this problem is simply to maintain a copy of unmodified positions at each solver iteration and use those unmodified positions to constrain each vertex.
+
 
 ## Milestone 3 - 12/7/2015
 [slides](https://docs.google.com/presentation/d/1OpCrZfxQcJsMGToeXmzwc1cdoZwTzvEy3AgFFTF1_hQ/edit?usp=sharing)
