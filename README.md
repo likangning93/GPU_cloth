@@ -4,16 +4,19 @@ This project in progress is a PBD cloth simulation accelerated and parallelized 
 
 ## Work-In-Progress Video
 ![https://vimeo.com/148582926](images/danube.gif)
+
 (pssst this gif is a link to vimeo)
 
 ## Contents
 - Brief overview of PBD and OpenGL Compute Shaders
 - Simulation pipeline overview
 - Performance Analysis
-- Tips Tricks
+- Tips and Tricks
 - Milestones (in reverse chronological order)
 
 ## PBD and OpenGL Compute Shaders
+
+![](ball.png)
 
 PBD stands for [Position Based Dynamics](http://matthias-mueller-fischer.ch/publications/posBasedDyn.pdf) and is one method amongst many for simulating cloth as a series of interconnected vertices. Most other systems are mass-spring systems and use forces to compute the trajectories of the cloth particles over time, but this can get extremely unstable with large timesteps - for example, the forces acting on a point in the cloth may cause it to overextend its "springs," so that in the next timestep an even larger force attempts to correct this, causing it to overextend in another direction... and so on.
 
@@ -22,7 +25,64 @@ Position Based Dynamics directly manipulates vertex positions and velocities to 
 Since solving a cloth system structured like this involves running a similar computation for many different vertices, it seems intuitively like a problem that can be accelerated by massive parallelism on a GPU. OpenGL compute shaders are one way of doing this - they allow users to perform parallelized computation on data outside the usual shading pipeline. It's meant for similar problems as Nvidia's CUDA but can be used on a wider variety of hardware systems. Also, OpenGL compute shaders and the normal OpenGL shading pipeline can use the same buffers without much fuss, which is a really nice bonus for computer graphics simulations.
 
 ## Simulation Pipeline overview
+My pipeline primarily works on "vertices" and "constraints," all of which are packed into vec4s in various ways.
+Vertices are generally laid out as [x, y, z positions, inverse mass].
+Constraints come in two varieties:
+- stretch constraints: [index of position to be constrained, index of constrainer, rest length, SSBO ID]
+	- the SSBO ID and indices allow this constraint to act as a "pin" as well as a spring constraint
+	- a negative rest length signals that a constraint is a "pin"
+	- this simulation supports pinning cloths to moving rigidbodies
+- collision constraints: [normal of collision point, parametric distance to collision point]
 
+I broke down each PBD "stage" into its own shader, along with a few more. They are as follows:
+1) compute the influence of external forces on each vertex's velocity
+- parallelized by vertex
+2) damp the velocities
+- currently only basic damping, a multiplier on linear velocities
+- damping that preserves rotational momentum would probably require compute shader stream compaction, a whole additional stage
+- parallelized by vertex
+3) generate position predictions for PBD to fix based on the updated velocities
+- parallelized by vertex
+4) update masses to conform with constraints
+- vertices that are "pinned" are given "infinite mass," or 0 inverse mass
+- this way they cannot be moved by their other spring constraints
+5) use PBD to "fix" the positions for some number of repititions
+- parallelized by constraint - in my current system each cloth particle may be influenced by up to 8 such constraints
+6) generate and resolve collision constraints
+- parallelized by vertex - each vertex may only have a single collision constraint at a given time
+7) update the positions and velocities for the next time step
+- parallelized per vertex
+
+## Performance Analysis
+I performed 3 types of tests for performance analysis:
+- vertex count in a cloth
+- vertex count in a collider
+- work group size
+All data was collected from 20 seconds of simulation using Nvidia's profiler in NSIGHT for Visual Studio.
+All testing was performed on Windows 10 64 bit on a GTX 970 GPU with 4 gigabytes of VRAM and an Intel i7 4790 CPU with 16 gigabytes of RAM. I collected data on time spent on the compute shader dispatch, time spent in memory barriers, and GPU utilization.
+
+### Cloth Vertex Count
+PBD runs on each cloth vertex multiple times per frame, so I wanted to look at the difference in performance hits between increasing the cloth vertex cound and increasing the collider vertex count.
+![](charts/varying_cloth_times.png)
+![](charts/varying_cloth_gpu.png)
+Unfortunately, the data does not really allow an immediately clear explanation, with performance in shader dispatch improving for the "middle" vertex counts before worsening again. In addition, the GPU utilization is even more puzzling in that apparently a 121 vertex cloth takes more resources to simulate than a 256 vertex cloth. More data and a more certain means of collecting said data would likely shed further light on this.
+
+One noticeable trend, however, is that the time spent in memory operations in in memory barriers seems to be fairly consistent and minimal across different vertex counts. More data is needed to confirm this.
+
+### Collider Vertex Count
+![](charts/varying_collider_times.png)
+![](charts/varying_collider_gpu.png)
+Varying the vertex count on the collider appears to also produce fairly consistent results across stages, this respite the fact that my collision detection is relatively naive and iteratively checks every triangle in the collider against each cloth vertex in parallel. The GPU utilization here partially makes more sense in that bigger collider meshes would doubtlessly take more resources to store and process.
+
+### Collider Vertex Count
+![](charts/varying_workgroup_times.png)
+![](charts/varying_workground_gpu.png)
+Varying the work group size does not seem to produce a trend in the actual dispatch times, and once again the GPU utilization percentage is somewhat perplexing.
+
+### Overall Analysis Notes
+It should be noted that the times recorded were all taken from NSIGHT's statistics on "time spent in the OpenGL API." This could mean that the time does not just include the time that the GPU takes to run a computation but also the additional time it takes to launch a compute shader invocation. If this is the case it is possible that these invocation launches are swallowing up the actual GPU compute times, resulting in the consistencies seen in dispatch times. This could also explain the seemingly trendless GPU utilization data.
+
+## Tips and Tricks
 
 ## Milestone 3 - 12/7/2015
 [slides](https://docs.google.com/presentation/d/1OpCrZfxQcJsMGToeXmzwc1cdoZwTzvEy3AgFFTF1_hQ/edit?usp=sharing)
