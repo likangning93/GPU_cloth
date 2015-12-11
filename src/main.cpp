@@ -114,21 +114,41 @@ bool init(int argc, char **argv) {
 
 	// Initialize simulation
 	std::vector<string> colliders;
-	//colliders.push_back("meshes/floor.obj");
 	colliders.push_back("meshes/low_poly_bear.obj");
+	colliders.push_back("meshes/floor.obj");
 	//colliders.push_back("meshes/semi_smooth_cube.obj");
 	//colliders.push_back("meshes/cube.obj");
 
 	std::vector<string> cloths;
-	//cloths.push_back("meshes/floor.obj");
+	cloths.push_back("meshes/dress.obj");
+	cloths.push_back("meshes/cape.obj");
 	//cloths.push_back("meshes/20x20cloth.obj");
 	//cloths.push_back("meshes/3x3cloth.obj");
 	//cloths.push_back("meshes/bear_cloth.obj");
 	//cloths.push_back("meshes/small_bear_cloth.obj");
-	cloths.push_back("meshes/dress.obj");
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
+
+	// let's generate some clothespins!
+	int bearLeftShoulder = 779;
+	int bearRightShoulder = 1578;
+	int bearSSBO = sim->rigids.at(0)->ssbo_pos;
+	sim->rigids.at(0)->color = glm::vec3(1.0f);
+	sim->rigids.at(0)->animated = true;
+
+	// SSBOs for cape
+	int capeLeftShoulder = 1;
+	int capeRightShoulder = 0;
+	sim->cloths.at(1)->addPinConstraint(capeLeftShoulder, bearLeftShoulder, bearSSBO);
+	sim->cloths.at(1)->addPinConstraint(capeRightShoulder, bearRightShoulder, bearSSBO);
+	sim->cloths.at(1)->color = glm::vec3(0.5f, 1.0f, 1.0f);
+
+	// SSBOs for dress
+	int dressLeftShoulder = 14;
+	int dressRightShoulder = 13;
+	sim->cloths.at(0)->addPinConstraint(dressLeftShoulder, bearLeftShoulder, bearSSBO);
+	sim->cloths.at(0)->addPinConstraint(dressRightShoulder, bearRightShoulder, bearSSBO);
 
     glEnable(GL_DEPTH_TEST);
 

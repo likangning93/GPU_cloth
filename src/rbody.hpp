@@ -20,6 +20,7 @@ public:
   GLuint ssbo_triangles; // buffer of triangles as vec4s
 
   glm::mat4 getTransformationAtTime(float dt);
+  bool animated = false;
 
 private:
 	// two basic "dances"

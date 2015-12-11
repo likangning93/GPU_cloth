@@ -278,6 +278,7 @@ void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {
 }
 
 void Simulation::animateRbody(Rbody *rbody) {
+	if (rbody->animated == false) return;
 	glm::mat4 tf = rbody->getTransformationAtTime(currentTime);
 	int numVertices = rbody->initPositions.size();
 	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE_ACC + 1;
