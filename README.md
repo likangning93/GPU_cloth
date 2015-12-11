@@ -16,7 +16,7 @@ This project in progress is a PBD cloth simulation accelerated and parallelized 
 
 ## PBD and OpenGL Compute Shaders
 
-![](ball.png)
+![](images/ball.png)
 
 PBD stands for [Position Based Dynamics](http://matthias-mueller-fischer.ch/publications/posBasedDyn.pdf) and is one method amongst many for simulating cloth as a series of interconnected vertices. Most other systems are mass-spring systems and use forces to compute the trajectories of the cloth particles over time, but this can get extremely unstable with large timesteps - for example, the forces acting on a point in the cloth may cause it to overextend its "springs," so that in the next timestep an even larger force attempts to correct this, causing it to overextend in another direction... and so on.
 
@@ -63,20 +63,23 @@ All testing was performed on Windows 10 64 bit on a GTX 970 GPU with 4 gigabytes
 
 ### Cloth Vertex Count
 PBD runs on each cloth vertex multiple times per frame, so I wanted to look at the difference in performance hits between increasing the cloth vertex cound and increasing the collider vertex count.
-![](charts/varying_cloth_times.png)
-![](charts/varying_cloth_gpu.png)
+![](images/charts/varying_cloth_times.png)
+![](images/charts/varying_cloth_gpu.png)
+
 Unfortunately, the data does not really allow an immediately clear explanation, with performance in shader dispatch improving for the "middle" vertex counts before worsening again. In addition, the GPU utilization is even more puzzling in that apparently a 121 vertex cloth takes more resources to simulate than a 256 vertex cloth. More data and a more certain means of collecting said data would likely shed further light on this.
 
 One noticeable trend, however, is that the time spent in memory operations in in memory barriers seems to be fairly consistent and minimal across different vertex counts. More data is needed to confirm this.
 
 ### Collider Vertex Count
-![](charts/varying_collider_times.png)
-![](charts/varying_collider_gpu.png)
+![](images/charts/varying_collider_times.png)
+![](images/charts/varying_collider_gpu.png)
+
 Varying the vertex count on the collider appears to also produce fairly consistent results across stages, this respite the fact that my collision detection is relatively naive and iteratively checks every triangle in the collider against each cloth vertex in parallel. The GPU utilization here partially makes more sense in that bigger collider meshes would doubtlessly take more resources to store and process.
 
 ### Collider Vertex Count
-![](charts/varying_workgroup_times.png)
-![](charts/varying_workground_gpu.png)
+![](images/charts/varying_workgroup_times.png)
+![](images/charts/varying_workground_gpu.png)
+
 Varying the work group size does not seem to produce a trend in the actual dispatch times, and once again the GPU utilization percentage is somewhat perplexing.
 
 ### Overall Analysis Notes
