@@ -101,6 +101,8 @@ I noted in the pipeline overview above that the stage at which a vertex is corre
 ### Ping-Ponging buffers
 PBD's constraints constrain a vertex by assessing the positions of its neighbors. However, simlar to above, consider a constraint solving a vertex that needs to look at a neighbore that some other constraints are solving in parallel. Whether or not this constraint will solve its vertex in the same way every time is thus uncertain - it might execute before or after the neighboring position has been corrected. An easy solution to this problem is simply to maintain a copy of unmodified positions at each solver iteration and use those unmodified positions to constrain each vertex.
 
+## Project Presentation - 12/11/2015
+[slides](https://docs.google.com/presentation/d/1fGabPMjATozz02SGecJLwdKp69wpPRkBqGUIn027k1M/edit?usp=sharing)
 
 ## Milestone 3 - 12/7/2015
 [slides](https://docs.google.com/presentation/d/1OpCrZfxQcJsMGToeXmzwc1cdoZwTzvEy3AgFFTF1_hQ/edit?usp=sharing)
