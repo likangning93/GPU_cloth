@@ -35,6 +35,7 @@ Constraints come in two varieties:
 - collision constraints: [normal of collision point, parametric distance to collision point]
 
 I broke down each PBD "stage" into its own shader, along with a few more. They are as follows:
+
 1. compute the influence of external forces on each vertex's velocity
   * parallelized by vertex
 2. damp the velocities
