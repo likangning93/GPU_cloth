@@ -3,9 +3,9 @@
 This project in progress is a PBD cloth simulation accelerated and parallelized using OpenGL compute shaders. For more details on the project motivation and milestones, see the [slides](https://docs.google.com/presentation/d/1t7K-MafQH_8fw7R2KPMy-iOtFBdPRJSsHp4oSA9XR0c/edit?usp=sharing).
 
 ## Work-In-Progress Video
-![https://vimeo.com/148582926](images/danube.gif)
+![](images/danube.gif)
 
-(pssst this gif is a link to vimeo)
+![On Vimeo](https://vimeo.com/148582926)
 
 ## Contents
 - Brief overview of PBD and OpenGL Compute Shaders
@@ -36,22 +36,22 @@ Constraints come in two varieties:
 
 I broke down each PBD "stage" into its own shader, along with a few more. They are as follows:
 1. compute the influence of external forces on each vertex's velocity
-	- parallelized by vertex
+  * parallelized by vertex
 2. damp the velocities
-	- currently only basic damping, a multiplier on linear velocities
-	- damping that preserves rotational momentum would probably require compute shader stream compaction, a whole additional stage
-	- parallelized by vertex
+  * currently only basic damping, a multiplier on linear velocities
+  * damping that preserves rotational momentum would probably require compute shader stream compaction, a whole additional stage
+  * parallelized by vertex
 3. generate position predictions for PBD to fix based on the updated velocities
-	- parallelized by vertex
+  * parallelized by vertex
 4. update masses to conform with constraints
-	- vertices that are "pinned" are given "infinite mass," or 0 inverse mass
-	- this way they cannot be moved by their other spring constraints
+  * vertices that are "pinned" are given "infinite mass," or 0 inverse mass
+  * this way they cannot be moved by their other spring constraints
 5. use PBD to "fix" the positions for some number of repititions
-	- parallelized by constraint - in my current system each cloth particle may be influenced by up to 8 such constraints
+  * parallelized by constraint - in my current system each cloth particle may be influenced by up to 8 such constraints
 6. generate and resolve collision constraints
--	 parallelized by vertex - each vertex may only have a single collision constraint at a given time
+  * parallelized by vertex - each vertex may only have a single collision constraint at a given time
 7. update the positions and velocities for the next time step
-	- parallelized per vertex
+  * parallelized per vertex
 
 ## Performance Analysis
 I performed 3 types of tests for performance analysis:

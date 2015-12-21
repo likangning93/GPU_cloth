@@ -75,24 +75,24 @@ GLuint initComputeProg(const char *path) {
 }
 
 void Simulation::initComputeProgs() {
-	prog_ppd1_externalForces = initComputeProg("../shaders/cloth_ppd1_externalForces.comp.glsl");
+	prog_ppd1_externalForces = initComputeProg("../shaders/cloth_pbd1_externalForces.comp.glsl");
 	glUseProgram(prog_ppd1_externalForces);
 	glUniform3fv(1, 1, &Gravity[0]);
 	glUniform1f(0, timeStep);
 
-	prog_ppd2_dampVelocity = initComputeProg("../shaders/cloth_ppd2_dampVelocities.comp.glsl");
+	prog_ppd2_dampVelocity = initComputeProg("../shaders/cloth_pbd2_dampVelocities.comp.glsl");
 
-	prog_ppd3_predictPositions = initComputeProg("../shaders/cloth_ppd3_predictPositions.comp.glsl");
+	prog_ppd3_predictPositions = initComputeProg("../shaders/cloth_pbd3_predictPositions.comp.glsl");
 	glUseProgram(prog_ppd3_predictPositions);
 	glUniform1f(0, timeStep);
 
-	prog_ppd4_updateInvMass = initComputeProg("../shaders/cloth_ppd4_updateInverseMasses.comp.glsl");
+	prog_ppd4_updateInvMass = initComputeProg("../shaders/cloth_pbd4_updateInverseMasses.comp.glsl");
 
-	prog_ppd6_projectClothConstraints = initComputeProg("../shaders/cloth_ppd6_projectClothConstraints.comp.glsl");
+	prog_ppd6_projectClothConstraints = initComputeProg("../shaders/cloth_pbd5_projectClothConstraints.comp.glsl");
 	glUseProgram(prog_ppd6_projectClothConstraints);
 	glUniform1f(0, (float) projectTimes);
 
-	prog_ppd7_updateVelPos = initComputeProg("../shaders/cloth_ppd7_updatePositionsVelocities.comp.glsl");
+	prog_ppd7_updateVelPos = initComputeProg("../shaders/cloth_pbd6_updatePositionsVelocities.comp.glsl");
 	glUseProgram(prog_ppd7_updateVelPos);
 	glUniform1f(0, timeStep);
 
