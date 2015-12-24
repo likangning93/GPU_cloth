@@ -46,8 +46,8 @@ Rbody::~Rbody() {
 }
 
 glm::mat4 Rbody::getTransformationAtTime(float t) {
-	return sineHop(t) * twirl(t);
-	//return sineHop(t);
+	if (animated) return sineHop(t) * twirl(t);
+	return glm::mat4();
 }
 
 glm::mat4 Rbody::twirl(float t) {

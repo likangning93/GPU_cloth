@@ -19,6 +19,8 @@ class Mesh
 {
 public:
   string filename;
+  GLuint attr_position = 0;
+  GLuint drawingVAO;
   GLuint ssbo_pos; // shader storage buffer object -> holds positions
   GLuint idxbo; // index buffer
   //GLuint ssbo_debug; // ssbo for storing debug info

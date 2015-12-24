@@ -19,13 +19,8 @@
 
 GLuint attr_position = 0;
 const char *attributeLocations[] = { "Position" };
-GLuint drawingVAO = 0;
-GLuint wireVAO = 0;
 GLuint displayImage;
 GLuint program[2];
-
-GLuint raycastSSBO;
-GLuint raycastIDXBO;
 
 const unsigned int PROG_CLOTH = 0; // program for rendering cloth
 const unsigned int PROG_WIRE = 1; // program for rendering wireframes, like for raycasting
@@ -70,3 +65,12 @@ void updateCamera();
 bool init(int argc, char **argv);
 void initVAO();
 void initShaders(GLuint *program);
+
+//====================================
+// room for different simualtions and
+// gl unit tests
+//====================================
+
+void glPlayground(); // for trying gl stuff
+void loadDancingBear(); // the default sim
+void loadStaticCollDebug(); // ball and cloth. debugging.

@@ -14,7 +14,6 @@
 // ================
 
 #define VISUALIZE 1
-#define PERFORMANCE 0 // analyze performance?
 
 const float DT = 0.2f;
 
@@ -79,28 +78,6 @@ bool init(int argc, char **argv) {
     }
     glGetError();
 
-    // Create and setup VAO for drawing
-	glGenVertexArrays(1, &drawingVAO);
-	glBindVertexArray(drawingVAO);
-    glEnableVertexAttribArray(attr_position);
-    glVertexAttribPointer((GLuint) attr_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
-    glBindVertexArray(0);
-
-	// Create and setup another VAO for drawing
-	glGenVertexArrays(1, &wireVAO);
-	glBindVertexArray(wireVAO);
-	glEnableVertexAttribArray(attr_position);
-	glVertexAttribPointer((GLuint)attr_position, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glBindVertexArray(0);
-
-	// create and set up raycast SSBO
-	glGenBuffers(1, &raycastSSBO);
-	glGenBuffers(1, &raycastIDXBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, raycastIDXBO);
-	int indices[2] = { 0, 1 };
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 2 * sizeof(GLuint),
-		&indices[0], GL_STATIC_DRAW);
-
 	glm::vec3 cameraPosition;
 	cameraPosition.x = zoom * sin(phi) * sin(theta);
 	cameraPosition.z = zoom * cos(theta);
@@ -112,31 +89,29 @@ bool init(int argc, char **argv) {
     projection = projection * view;
 
     initShaders(program);
+	
+	//loadDancingBear();
+	loadStaticCollDebug();
+
+    glEnable(GL_DEPTH_TEST);
+
+    return true;
+}
+
+void loadDancingBear() {
 	std::vector<string> colliders;
 	std::vector<string> cloths;
-#if !PERFORMANCE
 	// Initialize a fun simulation
 	colliders.push_back("meshes/low_poly_bear.obj");
 	colliders.push_back("meshes/floor.obj");
-	//colliders.push_back("meshes/semi_smooth_cube.obj");
-	//colliders.push_back("meshes/cube.obj");
 
 	cloths.push_back("meshes/cape.obj");
 	cloths.push_back("meshes/dress.obj");
-	//cloths.push_back("meshes/20x20cloth.obj");
-	//cloths.push_back("meshes/3x3cloth.obj");
 	cloths.push_back("meshes/bear_cloth.obj");
-	//cloths.push_back("meshes/small_bear_cloth.obj");
-#endif
-#if PERFORMANCE
-	colliders.push_back("meshes/perf/ball_386.obj");
-	cloths.push_back("meshes/perf/cloth_529.obj");
-	pause = false;
-#endif
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
-#if !PERFORMANCE
+
 	// let's generate some clothespins!
 	int bearLeftShoulder = 779;
 	int bearRightShoulder = 1578;
@@ -157,10 +132,19 @@ bool init(int argc, char **argv) {
 	sim->cloths.at(1)->addPinConstraint(dressLeftShoulder, bearLeftShoulder, bearSSBO);
 	sim->cloths.at(1)->addPinConstraint(dressRightShoulder, bearRightShoulder, bearSSBO);
 	sim->cloths.at(1)->color = glm::vec3(1.0f, 0.5f, 0.5f);
-#endif
-    glEnable(GL_DEPTH_TEST);
+}
 
-    return true;
+void loadStaticCollDebug() {
+	std::vector<string> colliders;
+	std::vector<string> cloths;
+	colliders.push_back("meshes/perf/ball_386.obj");
+	cloths.push_back("meshes/perf/cloth_529.obj");
+
+	zoom = 10.0f;
+	updateCamera();
+
+	sim = new Simulation(colliders, cloths);
+	checkGLError("init sim");
 }
 
 void initShaders(GLuint * program) {
@@ -244,7 +228,7 @@ void mainLoop() {
 void drawMesh(Mesh *drawMe) {
 
   glUseProgram(program[PROG_CLOTH]);
-  glBindVertexArray(drawingVAO);
+  glBindVertexArray(drawMe->drawingVAO);
 
   // upload color uniform
   GLint location;
@@ -252,13 +236,10 @@ void drawMesh(Mesh *drawMe) {
 	  glUniform3fv(location, 1, &drawMe->color[0]);
   }
 
-  // Tell the GPU where the indices are: in the index buffer
-  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, drawMe->idxbo);
-
-  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, drawMe->ssbo_pos);
+  // Tell the GPU where the positions are. haven't figured out how to bind to the VAO yet
+  //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, drawMe->ssbo_pos);
 
   // Draw the elements.
-
   glDrawElements(GL_TRIANGLES, drawMe->indicesTris.size(), GL_UNSIGNED_INT, 0);
 
   //checkGLError("visualize");
@@ -403,3 +384,7 @@ void drawRaycast() {
 	checkGLError("raycast draw");
 }
 */
+
+void glPlayground() {
+
+}

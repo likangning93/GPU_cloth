@@ -1,3 +1,25 @@
+12/24/2015
+TODO:
+-clean code
+	-add a dedicated gl playground over in main [done]
+	-add methods to load different sims [done]
+	-give each mesh its own VAO [done-ish. complications with ssbos and VAOs]
+-fix static collision resolution -> the hack is a problem
+	-need "closest point on triangle" method -> blehhhhh
+	-how to test this well?
+
+
+12/21-22/2015
+TODO:
+-fix static collision resolution -> the hack is a problem
+	-need "closest point on triangle" method -> blehhhhh
+	-how to test this well?
+-add bvh capability
+	-uv and weight maps?
+	-or try to borrow the fbx loader from 562?
+-read up on self collision
+-read up on stackless tree traversal
+
 12/10/2015
 
 Kai:
