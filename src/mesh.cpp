@@ -3,8 +3,16 @@
 
 Mesh::Mesh(string filename) {
   this->filename = filename;
+
+  // compute a randomized, tiny jitter
+  /* initialize random seed: */
+  srand(time(NULL));
+
+  /* generate secret number between 1 and 100: */
+  jitter = glm::vec3(0.0f);
+
   // load things up
-  buildGeomtery();
+  buildGeometry();
 
   color = glm::vec3(0.6f);
 
@@ -57,11 +65,61 @@ Mesh::Mesh(string filename) {
   checkGLError("init mesh");
 }
 
+Mesh::Mesh(string filename, glm::vec3 jitter) {
+	this->filename = filename;
+
+	// compute a randomized, tiny jitter
+	/* initialize random seed: */
+	srand(time(NULL));
+
+	/* generate secret number between 1 and 100: */
+	this->jitter = jitter;
+
+	// load things up
+	buildGeometry();
+
+	color = glm::vec3(0.6f);
+
+	glGenVertexArrays(1, &drawingVAO);
+
+	// build all the gl buffers and stuff
+	glGenBuffers(1, &ssbo_pos);
+	glGenBuffers(1, &idxbo);
+
+	// upload indices
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, indicesTris.size() * sizeof(GLuint),
+		&indicesTris[0], GL_STATIC_DRAW);
+
+	// Initialize cloth positions on GPU
+
+	GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
+	int positionCount = initPositions.size();
+
+	glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_pos);
+	glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
+		&initPositions[0], GL_STREAM_COPY);
+
+	// bind indices to the VAO.
+	glBindVertexArray(drawingVAO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, idxbo);
+
+	// try to bind the ssbo to the VAO. this doesn't work yet, see drawMesh in main
+	glEnableVertexAttribArray(attr_position);
+	glBindBuffer(GL_ARRAY_BUFFER, ssbo_pos);
+	glVertexAttribPointer((GLuint)attr_position, 4, GL_FLOAT, GL_FALSE, 0, 0);
+
+	// shut off the VAO
+	glBindVertexArray(0);
+
+	checkGLError("init mesh");
+}
+
 Mesh::~Mesh() {
 
 }
 
-void Mesh::buildGeomtery()
+void Mesh::buildGeometry()
 {
   // load the file up
   ifstream myfile(filename);
@@ -100,7 +158,7 @@ void Mesh::placeToken(string token, ifstream *myfile) {
     if (token.compare(0, 1, "v") == 0)
     {
       token.erase(0, 2); // we'll assume v x y z, so erase v and whitespace space
-      initPositions.push_back(glm::vec4(parseOneVec3(token), 1.0));
+	  initPositions.push_back(glm::vec4(parseOneVec3(token) + jitter, 1.0));
       return;
     }
 
@@ -109,6 +167,8 @@ void Mesh::placeToken(string token, ifstream *myfile) {
     {
       token.erase(0, 2); // we'll assume f x y z, so erase f and whitespace space
         glm::ivec4 face_indices = parseOneivec4(token);
+		// slight jitter to avoid extreme edge cases
+
         // objs are 1 indexed
         face_indices -= glm::ivec4(1);
         indicesQuads.push_back(face_indices);

@@ -91,7 +91,8 @@ bool init(int argc, char **argv) {
     initShaders(program);
 	
 	//loadDancingBear();
-	loadStaticCollDebug();
+	//loadStaticCollDetectDebug();
+	loadStaticCollResolveDebug();
 
     glEnable(GL_DEPTH_TEST);
 
@@ -134,17 +135,30 @@ void loadDancingBear() {
 	sim->cloths.at(1)->color = glm::vec3(1.0f, 0.5f, 0.5f);
 }
 
-void loadStaticCollDebug() {
+void loadStaticCollDetectDebug() {
 	std::vector<string> colliders;
 	std::vector<string> cloths;
-	colliders.push_back("meshes/perf/ball_386.obj");
-	cloths.push_back("meshes/perf/cloth_529.obj");
-
+	cloths.push_back("meshes/perf/cloth_121.obj");
+	colliders.push_back("meshes/perf/ball_98.obj");
 	zoom = 10.0f;
 	updateCamera();
+	stepFrames = true;
+	sim = new Simulation(colliders, cloths);
+	checkGLError("init sim");
+}
+
+void loadStaticCollResolveDebug() {
+	std::vector<string> colliders;
+	std::vector<string> cloths;
+	colliders.push_back("meshes/low_poly_bear.obj");
+	colliders.push_back("meshes/floor.obj");
+
+	cloths.push_back("meshes/bear_cloth.obj");
 
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
+
+	sim->rigids.at(0)->animated = true;
 }
 
 void initShaders(GLuint * program) {
@@ -237,7 +251,7 @@ void drawMesh(Mesh *drawMe) {
   }
 
   // Tell the GPU where the positions are. haven't figured out how to bind to the VAO yet
-  //glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, drawMe->ssbo_pos);
+  glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, drawMe->ssbo_pos);
 
   // Draw the elements.
   glDrawElements(GL_TRIANGLES, drawMe->indicesTris.size(), GL_UNSIGNED_INT, 0);
@@ -384,6 +398,95 @@ void drawRaycast() {
 	checkGLError("raycast draw");
 }
 */
+
+glm::vec3 closestPointOnTriangle(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 P) {
+	glm::vec3 v0 = C - A;
+	glm::vec3 v1 = B - A;
+	glm::vec3 N = glm::cross(glm::normalize(v1), glm::normalize(v0));
+
+	// case 1: it's in the triangle
+	// project into triangle plane
+	// (project an arbitrary vector from P to triangle onto the normal)
+	glm::vec3 w = A - P;
+	float signedDistance = glm::dot(N, w);
+	glm::vec3 projP = P + signedDistance * N;
+
+	// compute u v coordinates
+	// http://www.blackpawn.com/texts/pointinpoly/
+	//u = ((v1.v1)(v2.v0) - (v1.v0)(v2.v1)) / ((v0.v0)(v1.v1) - (v0.v1)(v1.v0))
+	//v = ((v0.v0)(v2.v1) - (v0.v1)(v2.v0)) / ((v0.v0)(v1.v1) - (v0.v1)(v1.v0))
+	glm::vec3 v2 = projP - A;
+	float dot00 = glm::dot(v0, v0);
+	float dot01 = glm::dot(v0, v1);
+	float dot02 = glm::dot(v0, v2);
+	float dot11 = glm::dot(v1, v1);
+	float dot12 = glm::dot(v1, v2);
+
+	float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+	float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+
+
+	if (u >= 0.0 && v >= 0.0 && (u + v) >= 1.0) {
+		// compute pt from uv and return
+		return v1 * u + v2 * v + A;
+	}
+
+	// case 2: it's on an edge
+	// http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+	// t = - (x1 - x0) dot (x2 - x1) / len(x2 - x1) ^ 2
+	// x1 is the "line origin," x2 is the "towards" point, and x0 is the outlier
+	// check A->B edge
+	float tAB = -glm::dot(A - P, B - A) / pow(glm::length(B - A), 2.0f);
+
+	// check B->C edge
+	float tBC = -glm::dot(B - P, C - B) / pow(glm::length(C - B), 2.0f);
+
+	// check C->A edge
+	float tCA = -glm::dot(C - P, A - C) / pow(glm::length(A - C), 2.0f);
+
+	// assess each edge's distance and parametrics
+	float minDistance = -1.0f;
+	float candidate;
+	glm::vec3 x1;
+	glm::vec3 x2;
+	float t = -10.0f;
+	if (tAB >= 0.0 && tAB <= 1.0) {
+		minDistance = glm::length(glm::cross(P - A, P - B)) / length(B - A);
+		x1 = A;
+		x2 = B;
+		t = tAB;
+	}
+	if (tBC >= 0.0 && tBC <= 1.0) {
+		candidate = glm::length(glm::cross(P - B, P - C)) / length(B - C);
+		if (candidate < minDistance) {
+			minDistance = candidate;
+			x1 = B;
+			x2 = C;
+			t = tBC;
+		}
+	}
+	if (tCA >= 0.0 && tCA <= 1.0) {
+		candidate = glm::length(glm::cross(P - C, P - A)) / length(C - A);
+		if (candidate < minDistance) {
+			minDistance = candidate;
+			x1 = C;
+			x2 = A;
+			t = tCA;
+		}
+	}
+	if (t > -1.0f) {
+		return (t * (x2 - x1) + x1);
+	}
+
+	// case 3: it's one of the vertices
+	float distA = glm::length(P - A);
+	float distB = glm::length(P - B);
+	float distC = glm::length(P - C);
+	if (distA < distB && distA < distC) return A;
+	if (distB < distA && distB < distC) return B;
+	return C;
+}
 
 void glPlayground() {
 

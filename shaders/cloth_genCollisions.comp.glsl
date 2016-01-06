@@ -4,6 +4,7 @@
 
 // TODO: change work group size here and in nbody.cpp
 #define WORK_GROUP_SIZE_VELPOS 32
+#define EPSILON 0.0001
 
 layout(std430, binding = 0) buffer _pCloth1 { // cloth positions in previous timestep
     vec4 pCloth1[];
@@ -11,7 +12,7 @@ layout(std430, binding = 0) buffer _pCloth1 { // cloth positions in previous tim
 layout(std430, binding = 1) buffer _pCloth2 { // cloth positions in new timestep
     vec4 pCloth2[];
 };
-layout(std430, binding = 2) readonly buffer _bodyPositions { // influencee
+layout(std430, binding = 2) readonly buffer _bodyPositions { // influencee "rigidbody"
     vec4 pBody[];
 };
 layout(std430, binding = 3) readonly buffer _bodyTriangles {
@@ -114,9 +115,58 @@ void generateStaticConstraint(vec3 pos) {
     return;
 }
 
-// adapted from http://undernones.blogspot.com/2010/12/gpu-ray-tracing-with-glsl.html
-float intersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2)
+float mollerTrumboreIntersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2)
 {
+    
+    // adapted from Moller-Trumbore intersection algorithm pseudocode on wikipedia
+    vec3 e1, e2; // Edge1, Edge2
+    vec3 P, Q, T;
+    float det, inv_det, u, v;
+    float t;
+    
+    // vectors for edges sharing V1
+    e1 = v1 - v0;
+    e2 = v2 - v0;
+
+    // begin calculating determinant - also used to calculate u param
+    P = cross(dir, e2);
+
+    // if determinant is near zero, ray lies in plane of triangle
+    det = dot(e1, P);
+    // NOT culling
+    if (det > -EPSILON && det < EPSILON) return -1.0;
+    inv_det = 1.0 / det;
+
+    // calculate distance from v0 to ray origin
+    T = orig - v0;
+
+    // calculate u parameter and test bound
+    u = dot(T, P) * inv_det;
+    // the intersection lies outside of the triangle
+    if (u < 0.0 || u > 1.0) return -1.0;
+
+    // prepare to test v parameter
+    Q = cross(T, e1);
+
+    // calculate v param and test bound
+    v = dot(dir, Q) * inv_det;
+
+    // the intersection is outside the triangle?
+    if (v < 0.0 || (u + v) > 1.0) return -1.0;
+
+    t = dot(e2, Q) * inv_det;
+
+    if (t > 0.0) {
+        return t;
+    }
+
+    return -1.0;
+}
+
+float altIntersectTriangle(vec3 orig, vec3 dir, vec3 v0, vec3 v1, vec3 v2)
+{
+    // adapted from http://undernones.blogspot.com/2010/12/gpu-ray-tracing-with-glsl.html
+    // buggy? -> in some sims but not others. ditto with method above. wat
     vec3 u, v, n; // triangle vectors
     vec3 w0, w;  // ray float
     float r, a, b; // params to calc ray-plane intersect
@@ -170,14 +220,19 @@ void main() {
     // check if there's already a valid constraint. if so, do nothing
     if (pClothCollisionConstraints[idx].w >= 0.0) return; 
 
-    vec3 pos = pCloth1[idx].xyz;
-	vec3 lookAt = pCloth2[idx].xyz;
+    // also, if this is infinite weighted, do nothing
+    // inverse mass is the w in the position
+    if (pCloth1[idx].w < EPSILON) return;
+
+    vec3 pos = pCloth1[idx].xyz; // prev timestep
+    vec3 lookAt = pCloth2[idx].xyz; // next timestep
     float dirScale = length(lookAt - pos);
-    vec3 dir = (lookAt - pos) / dirScale;
+    vec3 dir = normalize(lookAt - pos);
 
     vec4 collisionConstraint = vec4(-1.0); // a bogus collisionConstraint
+
     // if there's an odd number of collisions, we're inside the mesh already
-    int numCollisions = 0; // which means we need a static constraint
+    int numCollisions = 0; // which means we need a static constraint (addtl handling here)
 
     debug[idx] = vec4(-1.0);
     vec3 debugPos;
@@ -185,45 +240,43 @@ void main() {
     // check against every triangle in the mesh.
     for (int i = 0; i < numTriangles; i++) {
 
-    	vec3 triangle = bodyTriangles[i].xyz;
-    	vec3 v0 = pBody[int(triangle.x)].xyz;
-    	vec3 v1 = pBody[int(triangle.y)].xyz;
-    	vec3 v2 = pBody[int(triangle.z)].xyz;
+        vec3 triangle = bodyTriangles[i].xyz;
+        vec3 v0 = pBody[int(triangle.x)].xyz;
+        vec3 v1 = pBody[int(triangle.y)].xyz;
+        vec3 v2 = pBody[int(triangle.z)].xyz;
         vec3 norm = normalize(cross(v1 - v0, v2 - v0));
 
-    	float collisionT = intersectTriangle(pos, dir, v0, v1, v2) / dirScale;
-        if (collisionT >= 0.0) {
-            if (numCollisions == 0) debug[idx].x = collisionT;
-            if (numCollisions == 1) debug[idx].y = collisionT;
-            if (numCollisions == 2) debug[idx].z = collisionT;
-            debugPos = pos + (lookAt - pos) * collisionT;
-            numCollisions++;
-        }
+        // b/c intersectTriangle gets us a distance with a normalized dir vector
+        // intersectTriangle = realLength * dirScale
+        // intersectTriangle / dirScale = realLength
+        float collisionT = mollerTrumboreIntersectTriangle(pos, dir, v0, v1, v2);
         // collision out of bounds
+        if (collisionT > -EPSILON) {
+            numCollisions++;
+            debugPos = pos + (collisionT / dirScale) * (lookAt - pos);
+        }
+        collisionT /= dirScale;
         if (collisionT > 1.0 || collisionT < 0.0) {
             continue;
         }
         //use the nearest collision with distance less than 1
-    	if (collisionConstraint.w < 0.0 && collisionT >= 0.0) { // first contact
-    		collisionConstraint = vec4(norm, collisionT);
-    	}
-    	else if (collisionT >= 0.0 && collisionT < collisionConstraint.w) {
-    		collisionConstraint = vec4(norm, collisionT);
-    	}
+        if (collisionConstraint.w < 0.0 ||
+            collisionT < collisionConstraint.w) {
+            collisionConstraint.xyz = norm;
+            collisionConstraint.w = collisionT;
+        }
     }
+    debug[idx].xyz = debugPos;
     debug[idx].w = numCollisions;
 
-    // if the number of collisions is odd (we are inside the mesh)
+    // if the number of collisions is odd
+    // and no triangle was crossed in the timestep, <- ? seems logical but leads to odd results
     // generate a static constraint instead.
-    if (numCollisions % 2 > 0) {
-        //pCloth2[idx].xyz = debugPosition;
+    if (numCollisions % 2 != 0) {//} && collisionConstraint.w < 0.0) {
+        //pCloth2[idx].xyz = debugPos;//vec3(0.0, 0.0, -numCollisions); // debug
         generateStaticConstraint(pos);
         return;
     }
 
-
-    if (collisionConstraint.w > 1.0 || collisionConstraint.w < 0.0) {
-        collisionConstraint = vec4(-1.0); // collision not between points over timestep
-    }
     pClothCollisionConstraints[idx] = collisionConstraint;
 }

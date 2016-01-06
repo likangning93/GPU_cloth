@@ -7,6 +7,7 @@
 #include <iostream>
 #include <fstream>
 #include <string>
+#include <time.h>
 
 // holds pointers to everything that can be rendered from a mesh
 // - GL buffer for positions
@@ -32,10 +33,13 @@ public:
   glm::vec3 color;
 
   Mesh(string filename);
+  Mesh(string filename, glm::vec3 jitter);
   ~Mesh();
 
 private:
-  void buildGeomtery();
+	glm::vec3 jitter;
+
+  void buildGeometry();
   void placeToken(string token, ifstream *myfile);
 
 };

@@ -10,6 +10,14 @@
 Simulation::Simulation(vector<string> &body_filenames,
 	vector<string> &cloth_filenames) {
 	initComputeProgs();
+	glm::vec3 jitter;
+	int iSecret;
+	iSecret = rand() % 100 + 1;
+	jitter.x = (float)iSecret / 100000.0f;
+	iSecret = rand() % 100 + 1;
+	jitter.y = (float)iSecret / 100000.0f;
+	iSecret = rand() % 100 + 1;
+	jitter.z = (float)iSecret / 100000.0f;
 
 	numRigids = body_filenames.size();
 	for (int i = 0; i < numRigids; i++) {
@@ -20,7 +28,13 @@ Simulation::Simulation(vector<string> &body_filenames,
 
 	numCloths = cloth_filenames.size();
 	for (int i = 0; i < numCloths; i++) {
-		Cloth *newCloth = new Cloth(cloth_filenames.at(i));
+		Cloth *newCloth = new Cloth(cloth_filenames.at(i), jitter);
+		iSecret = rand() % 100 + 1;
+		jitter.x = (float)iSecret / 100000.0f;
+		iSecret = rand() % 100 + 1;
+		jitter.y = (float)iSecret / 100000.0f;
+		iSecret = rand() % 100 + 1;
+		jitter.z = (float)iSecret / 100000.0f;
 		newCloth->uploadExternalConstraints();
 		cloths.push_back(newCloth);
 		checkGLError("init cloths");
@@ -119,13 +133,13 @@ void Simulation::genCollisionConstraints(Cloth *cloth, Rbody *rbody) {
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, rbody->ssbo_pos);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 3, rbody->ssbo_triangles);
 	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 4, cloth->ssbo_collisionConstraints);
-	//glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, cloth->ssbo_debug);
+	glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 5, cloth->ssbo_debug);
 
 	int workGroupCount_vertices = (numVertices - 1) / WORK_GROUP_SIZE + 1;
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
-	//retrieveBuffer(cloth->ssbo_debug, 81);
+	//retrieveBuffer(cloth->ssbo_debug, 121);
 }
 
 void Simulation::stepSingleCloth(Cloth *cloth) {
@@ -270,7 +284,7 @@ void Simulation::retrieveBuffer(GLuint ssbo, int numItems) {
 	}
 	checkGLError("backcopy");
  	for (int i = 0; i < numItems; i++) {
-		if (int(positions.at(i).w + 0.0001f) == 1)
+		if (positions.at(i).w > 0.0001f && ((int)positions.at(i).w % 2 || positions.at(i).w > 2.0f))
 			cout << positions.at(i).x << " " << positions.at(i).y << " " << positions.at(i).z << " " << positions.at(i).w << endl;
 	}
 	glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);

@@ -21,6 +21,7 @@ public:
   GLuint ssbo_pos_pred2; // predicted positions buffer
 
   GLuint ssbo_vel; // shader storage buffer object -> holds velocities
+  GLuint ssbo_debug;
 
   // all constraints in these buffers are vec4s:
   // index of pos to modify, index of influencer, rest length, stiffness K
@@ -41,7 +42,7 @@ public:
 
   std::vector<GLuint> pinnedSSBOs; // SSBOs that this is pinned to
 
-  Cloth(string filename);
+  Cloth(string filename, glm::vec3 jitter);
   ~Cloth();
   void addPinConstraint(int thisIdx, int otherIdx, GLuint SSBO_ID);
   void uploadExternalConstraints(); // upload all determined constraints.

@@ -1,7 +1,7 @@
 #include "cloth.hpp"
 #include "checkGLError.hpp"
 
-Cloth::Cloth(string filename) : Mesh(filename) {
+Cloth::Cloth(string filename, glm::vec3 jitter) : Mesh(filename, jitter) {
 	
   GLint bufMask = GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT;
   int positionCount = initPositions.size();
@@ -9,6 +9,12 @@ Cloth::Cloth(string filename) : Mesh(filename) {
   glGenBuffers(1, &ssbo_vel);
   glGenBuffers(1, &ssbo_pos_pred1);
   glGenBuffers(1, &ssbo_pos_pred2);
+  glGenBuffers(1, &ssbo_debug);
+
+  glBindBuffer(GL_SHADER_STORAGE_BUFFER, ssbo_debug);
+  glBufferData(GL_SHADER_STORAGE_BUFFER, positionCount * sizeof(glm::vec4),
+	  NULL, GL_STREAM_COPY);
+
 
   // redo the positions buffer with masses
 

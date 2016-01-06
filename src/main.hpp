@@ -73,4 +73,5 @@ void initShaders(GLuint *program);
 
 void glPlayground(); // for trying gl stuff
 void loadDancingBear(); // the default sim
-void loadStaticCollDebug(); // ball and cloth. debugging.
+void loadStaticCollDetectDebug(); // ball and cloth. debugging.
+void loadStaticCollResolveDebug(); // floor and cloth. debugging.

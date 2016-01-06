@@ -1,3 +1,27 @@
+01/01/2015
+-so: the intersection detection problem appears to have been an edge case
+	-the models were such that the problem verts in cloth HAPPENED to align with verts on the mesh in init
+	-Karl's suggested solution: jitter the model by some tiny offset
+	-we replaced the blogspot triangle intersect with more canonical algorithm though -> yay!
+	-worthwhile to confirm this case on an earlier branch maybe? -> use the debug buffer to indicate triangle intersects? -> might take too long. we're pretty sure this is the case anyway, in the worst edge cases we had 12 intersections, which kind of makes sense (6 entering, 6 exiting)
+TODO:
+-add imperceptible jitter option to loader
+-fix the "nearest point on triangle" algorithm
+-look at short stack traversal
+-write up plans for acceleration structures
+-add a proper animation system and bvh loader
+
+12/25/2015
+-working on fixing static intersection detection [done?]
+	-leaving resolution for after this part...
+	-problem seems to still be in detection raycasting
+	-wat -> ok seems to have been a stupid logic error
+	-but now seems to be causing major problems with the bear -> clothespins -> dammit
+-work on fixing static intersection resolution
+	-problem is still in the hack -> see collision resolution demo
+	-also, how to deal with clothespins?!
+		-ah. they're marked by mass, aren't they? maybe say "no handling" for clothespinned things?
+
 12/24/2015
 TODO:
 -clean code
@@ -7,6 +31,8 @@ TODO:
 -fix static collision resolution -> the hack is a problem
 	-need "closest point on triangle" method -> blehhhhh
 	-how to test this well?
+		-so we have a test scene to handle on situation
+		-there still seem to be phantom collisions/resolutions going on
 
 
 12/21-22/2015
