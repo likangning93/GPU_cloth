@@ -494,10 +494,10 @@ void runTests() {
   | P
   A---B
   ********************************************/
-  P = glm::vec3(0.0f, 0.0f, 1.0f);
+  P = glm::vec3(0.1f, 0.1f, 2.0f);
   nearest = closestPointOnTriangle(A, B, C, P);
   cout << "testing case 1: closest point is in triangle." << endl;
-  cout << "expected: 0 0 0 actual: " << nearest.x << " " << nearest.y << " " << nearest.z << endl;
+  cout << "expected: 0.1 0.1 0.0 actual: " << nearest.x << " " << nearest.y << " " << nearest.z << endl;
   
   // case 2: closest ISX is on an edge
   /********************************************

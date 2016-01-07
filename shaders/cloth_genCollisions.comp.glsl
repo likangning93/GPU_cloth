@@ -31,48 +31,80 @@ layout(location = 0) uniform int numTriangles;
 layout(location = 1) uniform int numPositions;
 layout(location = 2) uniform float staticConstraintBounce;
 
-vec3 nearestPointOnTriangle(vec3 pos, vec3 v0, vec3 v1, vec3 v2)
+vec3 nearestPointOnTriangle(vec3 P, vec3 A, vec3 B, vec3 C)
 {
-    // this is an approximation that will merely return the nearest of the three verts, the centroid,
-    // and each of the three edge midpoints
-    vec3 nearest = (v0 + v1 + v2) / 3.0;
-    float minLength = length(nearest - pos);
+    vec3 v0 = C - A;
+    vec3 v1 = B - A;
+    vec3 N_v2 = cross(normalize(v1), normalize(v0));
 
-    float candidate = length(v0 - pos);
-    if (candidate < minLength) {
-        nearest = v0;
-        minLength = candidate;
-    }
-    candidate = length(v1 - pos);
-    if (candidate < minLength) {
-        nearest = v1;
-        minLength = candidate;
-    }
-    candidate = length(v2 - pos);
-    if (candidate < minLength) {
-        nearest = v2;
-        minLength = candidate;
-    }
-    // check edge midpoints
-    vec3 vM = (v0 + v1) / 2;
-    candidate = length(vM - pos);
-    if (candidate < minLength) {
-        nearest = vM;
-        minLength = candidate;
-    }
-    vM = (v1 + v2) / 2;
-    candidate = length(vM - pos);
-    if (candidate < minLength) {
-        nearest = vM;
-        minLength = candidate;
-    }
-    vM = (v2 + v0) / 2;
-    candidate = length(vM - pos);
-    if (candidate < minLength) {
-        nearest = vM;
-        minLength = candidate;
-    }
-    return nearest;
+    // case 1: it's in the triangle
+    // project into triangle plane
+    // (project an arbitrary vector from P to triangle onto the normal)
+    vec3 w = A - P;
+    float signedDistance_invDenom = dot(N_v2, w);
+    vec3 projP = P + signedDistance_invDenom * N_v2;
+
+    // compute u v coordinates
+    // http://www.blackpawn.com/texts/pointinpoly/
+    //u = ((v1.v1)(v2.v0) - (v1.v0)(v2.v1)) / ((v0.v0)(v1.v1) - (v0.v1)(v1.v0))
+    //v = ((v0.v0)(v2.v1) - (v0.v1)(v2.v0)) / ((v0.v0)(v1.v1) - (v0.v1)(v1.v0))
+    N_v2 = projP - A;
+    float dot00_tAB = dot(v0, v0);
+    float dot01_tBC = dot(v0, v1);
+    float dot02_tCA = dot(v0, N_v2);
+    float dot11_minDistance = dot(v1, v1);
+    float dot12_candidate = dot(v1, N_v2);
+
+    signedDistance_invDenom = 1 / (dot00_tAB * dot11_minDistance - dot01_tBC * dot01_tBC);
+    float u_t = (dot11_minDistance * dot02_tCA - dot01_tBC * dot12_candidate) * signedDistance_invDenom;
+    float v = (dot00_tAB * dot12_candidate - dot01_tBC * dot02_tCA) * signedDistance_invDenom;
+
+    // if the u v is in bounds, we can return the projected point
+    if (u_t >= 0.0 && v >= 0.0 && (u_t + v) <= 1.0) {
+      return projP;
+      }
+
+      // case 2: it's on an edge
+      // http://mathworld.wolfram.com/Point-LineDistance3-Dimensional.html
+      // t = - (x1 - x0) dot (x2 - x1) / len(x2 - x1) ^ 2
+      // x1 is the "line origin," x2 is the "towards" point, and x0 is the outlier
+      // check A->B edge
+      dot00_tAB = -dot(A - P, B - A) / pow(length(B - A), 2.0f);
+
+      // check B->C edge
+      dot01_tBC = -dot(B - P, C - B) / pow(length(C - B), 2.0f);
+
+      // check C->A edge
+      dot02_tCA = -dot(C - P, A - C) / pow(length(A - C), 2.0f);
+
+    // handle case 3: point is closest to a vertex
+    dot00_tAB = clamp(dot00_tAB, 0.0f, 1.0f);
+    dot01_tBC = clamp(dot01_tBC, 0.0f, 1.0f);
+    dot02_tCA = clamp(dot02_tCA, 0.0f, 1.0f);
+
+      // assess each edge's distance and parametrics
+    dot11_minDistance = length(cross(P - A, P - B)) / length(B - A);
+    dot12_candidate;
+      v0 = A;
+      v1 = B;
+    u_t = dot00_tAB;
+
+    dot12_candidate = length(cross(P - B, P - C)) / length(B - C);
+    if (dot12_candidate < dot11_minDistance) {
+      dot11_minDistance = dot12_candidate;
+      v0 = B;
+      v1 = C;
+      u_t = dot01_tBC;
+      }
+
+      dot12_candidate = length(cross(P - C, P - A)) / length(C - A);
+    if (dot12_candidate < dot11_minDistance) {
+      dot11_minDistance = dot12_candidate;
+      v0 = C;
+      v1 = A;
+      u_t = dot02_tCA;
+      }
+    return (u_t * (v1 - v0) + v0);
 }
 
 void generateStaticConstraint(vec3 pos) {
