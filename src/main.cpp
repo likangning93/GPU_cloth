@@ -429,10 +429,9 @@ glm::vec3 closestPointOnTriangle(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec
 	float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
 	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
-
-	if (u >= 0.0 && v >= 0.0 && (u + v) >= 1.0) {
-		// compute pt from uv and return
-		return v1 * u + v2 * v + A;
+  // if the u v is in bounds, we can return the projected point
+	if (u >= 0.0 && v >= 0.0 && (u + v) <= 1.0) {
+    return projP;
 	}
 
 	// case 2: it's on an edge
@@ -448,47 +447,34 @@ glm::vec3 closestPointOnTriangle(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec
 	// check C->A edge
 	float tCA = -glm::dot(C - P, A - C) / pow(glm::length(A - C), 2.0f);
 
+  // handle case 3: point is closest to a vertex
+  tAB = glm::clamp(tAB, 0.0f, 1.0f);
+  tBC = glm::clamp(tAB, 0.0f, 1.0f);
+  tCA = glm::clamp(tAB, 0.0f, 1.0f);
+
 	// assess each edge's distance and parametrics
-	float minDistance = -1.0f;
+  float minDistance = glm::length(glm::cross(P - A, P - B)) / length(B - A);
 	float candidate;
-	glm::vec3 x1;
-	glm::vec3 x2;
-	float t = -10.0f;
-	if (tAB >= 0.0 && tAB <= 1.0) {
-		minDistance = glm::length(glm::cross(P - A, P - B)) / length(B - A);
-		x1 = A;
-		x2 = B;
-		t = tAB;
-	}
-	if (tBC >= 0.0 && tBC <= 1.0) {
-		candidate = glm::length(glm::cross(P - B, P - C)) / length(B - C);
-		if (candidate < minDistance) {
-			minDistance = candidate;
-			x1 = B;
-			x2 = C;
-			t = tBC;
-		}
-	}
-	if (tCA >= 0.0 && tCA <= 1.0) {
-		candidate = glm::length(glm::cross(P - C, P - A)) / length(C - A);
-		if (candidate < minDistance) {
-			minDistance = candidate;
-			x1 = C;
-			x2 = A;
-			t = tCA;
-		}
-	}
-	if (t > -1.0f) {
-		return (t * (x2 - x1) + x1);
+	glm::vec3 x1 = A;
+	glm::vec3 x2 = B;
+	float t = tAB;
+
+	candidate = glm::length(glm::cross(P - B, P - C)) / length(B - C);
+	if (candidate < minDistance) {
+		minDistance = candidate;
+		x1 = B;
+		x2 = C;
+		t = tBC;
 	}
 
-	// case 3: it's one of the vertices
-	float distA = glm::length(P - A);
-	float distB = glm::length(P - B);
-	float distC = glm::length(P - C);
-	if (distA < distB && distA < distC) return A;
-	if (distB < distA && distB < distC) return B;
-	return C;
+	candidate = glm::length(glm::cross(P - C, P - A)) / length(C - A);
+	if (candidate < minDistance) {
+		minDistance = candidate;
+		x1 = C;
+		x2 = A;
+		t = tCA;
+	}
+	return (t * (x2 - x1) + x1);
 }
 
 void runTests() {
