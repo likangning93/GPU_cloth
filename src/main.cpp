@@ -57,6 +57,9 @@ bool init(int argc, char **argv) {
             << std::endl;
         return false;
     }
+    
+    // run some tests and unit tests
+    runTests();
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
@@ -488,6 +491,55 @@ glm::vec3 closestPointOnTriangle(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec
 	return C;
 }
 
-void glPlayground() {
+void runTests() {
+  cout << "running some tests..." << endl;
+  // tests for nearest point on triangle
 
+  cout << "testing nearest point on triangle algorithm" << endl;
+  glm::vec3 A, B, C, P, nearest;
+
+  A = glm::vec3(-1.0f, -1.0f, 0.0f);
+  B = glm::vec3(3.0f, -1.0f, 0.0f);
+  C = glm::vec3(-1.0f, 3.0f, 0.0f);
+
+  // case 1: closest ISX is in triangle
+  /********************************************
+  C
+  | P
+  A---B
+  ********************************************/
+  P = glm::vec3(0.0f, 0.0f, 1.0f);
+  nearest = closestPointOnTriangle(A, B, C, P);
+  cout << "testing case 1: closest point is in triangle." << endl;
+  cout << "expected: 0 0 0 actual: " << nearest.x << " " << nearest.y << " " << nearest.z << endl;
+  
+  // case 2: closest ISX is on an edge
+  /********************************************
+  C
+  |
+  A---B
+
+  P
+  ********************************************/
+  P = glm::vec3(1.0f, -2.0f, 0.0f);
+  nearest = closestPointOnTriangle(A, B, C, P);
+  cout << "testing case 2: closest point is on an edge." << endl;
+  cout << "expected: 1 -1 0 actual: " << nearest.x << " " << nearest.y << " " << nearest.z << endl;
+
+
+  // case 3: closest ISX is a vertex
+  /********************************************
+      C
+      |
+      A---B
+
+  P
+  ********************************************/
+  P = glm::vec3(-3.0f, -3.0f, 0.0f);
+  nearest = closestPointOnTriangle(A, B, C, P);
+  cout << "testing case 2: closest point is on an edge." << endl;
+  cout << "expected: -1 -1 0 actual: " << nearest.x << " " << nearest.y << " " << nearest.z << endl;
+
+  
+  cout << "done tests!" << endl;
 }

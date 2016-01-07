@@ -70,8 +70,8 @@ void initShaders(GLuint *program);
 // room for different simualtions and
 // gl unit tests
 //====================================
-
-void glPlayground(); // for trying gl stuff
+glm::vec3 closestPointOnTriangle(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 P);
+void runTests(); // for trying gl stuff
 void loadDancingBear(); // the default sim
 void loadStaticCollDetectDebug(); // ball and cloth. debugging.
 void loadStaticCollResolveDebug(); // floor and cloth. debugging.
