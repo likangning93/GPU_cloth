@@ -405,32 +405,32 @@ void drawRaycast() {
 glm::vec3 closestPointOnTriangle(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 P) {
 	glm::vec3 v0 = C - A;
 	glm::vec3 v1 = B - A;
-	glm::vec3 N = glm::cross(glm::normalize(v1), glm::normalize(v0));
+	glm::vec3 N_v2 = glm::cross(glm::normalize(v1), glm::normalize(v0));
 
 	// case 1: it's in the triangle
 	// project into triangle plane
 	// (project an arbitrary vector from P to triangle onto the normal)
 	glm::vec3 w = A - P;
-	float signedDistance = glm::dot(N, w);
-	glm::vec3 projP = P + signedDistance * N;
+  float signedDistance_invDenom = glm::dot(N_v2, w);
+  glm::vec3 projP = P + signedDistance_invDenom * N_v2;
 
 	// compute u v coordinates
 	// http://www.blackpawn.com/texts/pointinpoly/
 	//u = ((v1.v1)(v2.v0) - (v1.v0)(v2.v1)) / ((v0.v0)(v1.v1) - (v0.v1)(v1.v0))
 	//v = ((v0.v0)(v2.v1) - (v0.v1)(v2.v0)) / ((v0.v0)(v1.v1) - (v0.v1)(v1.v0))
-	glm::vec3 v2 = projP - A;
-	float dot00 = glm::dot(v0, v0);
-	float dot01 = glm::dot(v0, v1);
-	float dot02 = glm::dot(v0, v2);
-	float dot11 = glm::dot(v1, v1);
-	float dot12 = glm::dot(v1, v2);
+	N_v2 = projP - A;
+	float dot00_tAB = glm::dot(v0, v0);
+	float dot01_tBC = glm::dot(v0, v1);
+	float dot02_tCA = glm::dot(v0, N_v2);
+	float dot11_minDistance = glm::dot(v1, v1);
+	float dot12_candidate = glm::dot(v1, N_v2);
 
-	float invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-	float u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-	float v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+  signedDistance_invDenom = 1 / (dot00_tAB * dot11_minDistance - dot01_tBC * dot01_tBC);
+  float u_t = (dot11_minDistance * dot02_tCA - dot01_tBC * dot12_candidate) * signedDistance_invDenom;
+  float v = (dot00_tAB * dot12_candidate - dot01_tBC * dot02_tCA) * signedDistance_invDenom;
 
   // if the u v is in bounds, we can return the projected point
-	if (u >= 0.0 && v >= 0.0 && (u + v) <= 1.0) {
+  if (u_t >= 0.0 && v >= 0.0 && (u_t + v) <= 1.0) {
     return projP;
 	}
 
@@ -439,42 +439,42 @@ glm::vec3 closestPointOnTriangle(glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec
 	// t = - (x1 - x0) dot (x2 - x1) / len(x2 - x1) ^ 2
 	// x1 is the "line origin," x2 is the "towards" point, and x0 is the outlier
 	// check A->B edge
-	float tAB = -glm::dot(A - P, B - A) / pow(glm::length(B - A), 2.0f);
+	dot00_tAB = -glm::dot(A - P, B - A) / pow(glm::length(B - A), 2.0f);
 
 	// check B->C edge
-	float tBC = -glm::dot(B - P, C - B) / pow(glm::length(C - B), 2.0f);
+	dot01_tBC = -glm::dot(B - P, C - B) / pow(glm::length(C - B), 2.0f);
 
 	// check C->A edge
-	float tCA = -glm::dot(C - P, A - C) / pow(glm::length(A - C), 2.0f);
+	dot02_tCA = -glm::dot(C - P, A - C) / pow(glm::length(A - C), 2.0f);
 
   // handle case 3: point is closest to a vertex
-  tAB = glm::clamp(tAB, 0.0f, 1.0f);
-  tBC = glm::clamp(tAB, 0.0f, 1.0f);
-  tCA = glm::clamp(tAB, 0.0f, 1.0f);
+  dot00_tAB = glm::clamp(dot00_tAB, 0.0f, 1.0f);
+  dot01_tBC = glm::clamp(dot01_tBC, 0.0f, 1.0f);
+  dot02_tCA = glm::clamp(dot02_tCA, 0.0f, 1.0f);
 
 	// assess each edge's distance and parametrics
-  float minDistance = glm::length(glm::cross(P - A, P - B)) / length(B - A);
-	float candidate;
-	glm::vec3 x1 = A;
-	glm::vec3 x2 = B;
-	float t = tAB;
+  dot11_minDistance = glm::length(glm::cross(P - A, P - B)) / length(B - A);
+  dot12_candidate;
+	v0 = A;
+	v1 = B;
+  u_t = dot00_tAB;
 
-	candidate = glm::length(glm::cross(P - B, P - C)) / length(B - C);
-	if (candidate < minDistance) {
-		minDistance = candidate;
-		x1 = B;
-		x2 = C;
-		t = tBC;
+  dot12_candidate = glm::length(glm::cross(P - B, P - C)) / length(B - C);
+  if (dot12_candidate < dot11_minDistance) {
+    dot11_minDistance = dot12_candidate;
+    v0 = B;
+    v1 = C;
+    u_t = dot01_tBC;
 	}
 
-	candidate = glm::length(glm::cross(P - C, P - A)) / length(C - A);
-	if (candidate < minDistance) {
-		minDistance = candidate;
-		x1 = C;
-		x2 = A;
-		t = tCA;
+	dot12_candidate = glm::length(glm::cross(P - C, P - A)) / length(C - A);
+  if (dot12_candidate < dot11_minDistance) {
+    dot11_minDistance = dot12_candidate;
+    v0 = C;
+    v1 = A;
+    u_t = dot02_tCA;
 	}
-	return (t * (x2 - x1) + x1);
+  return (u_t * (v1 - v0) + v0);
 }
 
 void runTests() {
