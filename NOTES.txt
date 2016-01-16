@@ -1,4 +1,163 @@
-01/01/2015
+01/16/2016
+PROFILING - http://www.lighthouse3d.com/tutorials/opengl-timer-query/
+
+-glGet returns current GL time
+-but this is time after all previous commands have been SENT to the GPU - might not be done executing
+-this should be pretty close to if you asked for CPU time before and after some GPU commands
+
+	GLint64 timer;
+	glGetInteger64v(GL_TIMESTAMP, &timer);
+
+-getting elapsed time for something on the GPU: intuitively this requires the CPU to wait
+-you can tell if a GPU task has finished using queries -> glGenQueries, glGetQueryObjectiv
+
+	GLint64 startTime, stopTime; // handles for time
+	unsigned int queryID[2]; // handles for queries on the GPU
+	 
+	// generate two queries
+	glGenQueries(2, queryID);
+	...
+	// issue the first query
+	// Records the time only after all previous 
+	// commands have been completed
+	glQueryCounter(queryID[0], GL_TIMESTAMP);
+	 
+	// call a sequence of OpenGL commands
+	...
+	// issue the second query
+	// records the time when the sequence of OpenGL 
+	// commands has been fully executed
+	glQueryCounter(queryID[1], GL_TIMESTAMP);
+	...
+	// wait until the results are available
+	unsigned int stopTimerAvailable = 0;
+	// repeatedly ask for if the second query (issued after first) is available
+	while (!stopTimerAvailable) {
+	    glGetQueryObjectiv(queryID[1], 
+	                               GL_QUERY_RESULT_AVAILABLE, 
+	                               &stopTimerAvailable);
+	}
+	 
+	// get query results
+	glGetQueryObjectui64v(queryID[0], GL_QUERY_RESULT, &startTime);
+	glGetQueryObjectui64v(queryID[1], GL_QUERY_RESULT, &stopTime);
+	 
+	printf("Time spent on the GPU: %f ms\n", (stopTime - startTime) / 1000000.0);
+
+-more compact way of doing this: glBeginQuery and glEndQuery with GL_TIME_ELAPSED
+-can't interleave glBeginQuery and glEndQuery though
+
+	GLuint query; // query handle
+	GLuint64 elapsed_time;
+	 
+	glGenQueries(1, &query);
+	glBeginQuery(GL_TIME_ELAPSED,query);
+	 
+	// call some OpenGL commands
+	...
+	 
+	glEndQuery(GL_TIME_ELAPSED);
+	 
+	... 
+	 
+	// retrieving the recorded elapsed time
+	// wait until the query result is available
+	unsigned int done = 0;
+	while (!done) {
+	    glGetQueryObjectiv(query, 
+	            GL_QUERY_RESULT_AVAILABLE, 
+	            &done);
+	}
+	 
+	// get the query result
+	glGetQueryObjectui64v(query, GL_QUERY_RESULT, &elapsed_time);
+	printf("Time Elapsed: %f ms\n"m elapsed_time / 1000000.0);
+
+-you can avoid stalling the CPU (having it wait for queries) by keeping two sets of queries
+-you issue queries on one frame and then read queries for the previous frame
+-because every time you call "render" you are making a "new frame"
+-indicated by swapping frame buffers
+
+	// call this function when initializating the OpenGL settings
+	void genQueries() {
+	 
+	    glGenQueries(QUERY_COUNT, queryID[queryBackBuffer]);
+	    glGenQueries(QUERY_COUNT, queryID[queryFrontBuffer]);
+	 
+	    // dummy query to prevent OpenGL errors from popping out
+	    glQueryCounter(queryID[queryFrontBuffer][0], GL_TIMESTAMP);
+	}
+	 
+	// aux function to keep the code simpler
+	void swapQueryBuffers() {
+	 
+	    if (queryBackBuffer) {
+	        queryBackBuffer = 0;
+	        queryFrontBuffer = 1;
+	    }
+	    else {
+	        queryBackBuffer = 1;
+	        queryFrontBuffer = 0;
+	    }
+	}
+
+	void renderFrame() {
+	...
+	glBeginQuery(GL_TIME_ELAPSED,queryID[queryBackBuffer][0]);
+	 
+	// call some OpenGL commands
+	...
+	glEndQuery(GL_TIME_ELAPSED);
+	...
+	glGetQueryObjectui64v(queryID[queryFrontBuffer][0], 
+	                    GL_QUERY_RESULT, &timer2);
+	swapQueryBuffers();
+	 
+	//swap frame buffers
+	...
+	 
+	}
+
+01/15/2016
+-so oct tree by z curve as I understand goes something like this:
+0) compute AABB (can we parallelize this well?)
+1) label all triangles with the Z curve index of their bins
+2) parallel sort
+3) build tree bottom-up as pointers in another buffer (buffer size determined by max tree depth
+4) short stack traversal: each thread does a traversal, but tree height is limited
+-problems with binning?
+	-can we index by 2s instead of 1s? so 0 2 4 6 for z instead of 0 1 2 3 4?
+	-then, triangles on borders (say, between cell 0 and cell 2) can be in "cell 3"
+	-sort makes this chunk of memory contiguous for both adjacent cells
+	-must understand Z curve to assess possibility -> ok no it's not doable
+	-other option requires basically duplicating the triangle somehow
+-other option: we place a cap for how many cells each triangle can be in and preallocate that much space
+	-idea is we input into the algorithm a buffer of triangle indices
+	-each triangle is identified by some constant number of contiguous array elements
+
+	-for each og triangle index in parallel, fetch the triangle and compute the SFC index of its block
+	-if the triangle fits in more than one block, use the rest of its space to specify the other block indices
+		-so this part will be serial per triangle. no need for crazy atomics
+	-then sort the list by SFC indices, build the tree
+	-won't work well for large triangles, but honestly, there's not much that will
+	-ok. do this. go read the rest of the SFC oct tree paper!
+
+-alternative option is top-down construction
+-at each stage, subdivide the pool of triangles into 8 pools
+-can be done by ping-ponging
+-allocating enough space allows binning, triangles in multiple pools
+-problems:
+	-virtually no parallelism in the first step
+	-then 8 threads
+	-then 64
+	-then 512
+-parallelism increases 8x with each pass -> if we go to a depth of 8 or 16, this gets awesome fast
+-problem is that first pass, but this version handles binning MUCH better. worthwhile?
+	-otherwise binning requires elaborate atomics
+	-can also theoretically rebuild each frame at one depth
+	-even more so if 
+
+01/01/2016
 -so: the intersection detection problem appears to have been an edge case
 	-the models were such that the problem verts in cloth HAPPENED to align with verts on the mesh in init
 	-Karl's suggested solution: jitter the model by some tiny offset

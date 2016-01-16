@@ -161,7 +161,7 @@ void loadStaticCollResolveDebug() {
 	sim = new Simulation(colliders, cloths);
 	checkGLError("init sim");
 
-	sim->rigids.at(0)->animated = true;
+	sim->rigids.at(0)->animated = false;
 }
 
 void initShaders(GLuint * program) {
