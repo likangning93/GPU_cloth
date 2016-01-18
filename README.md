@@ -7,7 +7,7 @@ For more details on the project milestones and development during the semester, 
 ## Work-In-Progress Video
 ![](images/danube.gif)
 
-![On Vimeo](https://vimeo.com/148582926)
+[On Vimeo](https://vimeo.com/148582926)
 
 ## Contents
 - Brief overview of PBD and OpenGL Compute Shaders
