@@ -1,13 +1,13 @@
 #include "simulation.hpp"
 #include "checkGLError.hpp"
 
-// TODO: perform timing experiments, based on work group size.
-// You must ALSO change the work group size in the compute shaders.
+// for varying shader work group size.
+// this gets injected into the shaders when they are loaded.
 #define WORK_GROUP_SIZE 32
 
 #define DEBUG_VERBOSE 0
 
-#define QUERY_PERFORMANCE 1
+#define QUERY_PERFORMANCE 0
 
 #define PROJ_CONSTRAINTS 0
 #define GENER_COLLISIONS 1
@@ -410,31 +410,31 @@ void Simulation::stepSimulation() {
 	currentTime += timeStep;
 
 #if QUERY_PERFORMANCE
-	// report performance every 360 frames
-	if (frameCount % 360 == 0) {
+	// report performance every 600 frames
+	if (frameCount % 600 == 0) {
 		cout << "performance as of frame " << frameCount << endl;
 		cout << "average times (microseconds)" << endl;
-		cout << "solving internal constraints: " <<
+		cout << "solving internal constraints:     " <<
 			(float)timeStagesAVG[PROJ_CONSTRAINTS] / 1000.0f << endl;
 		cout << "generating collision constraints: " <<
 			(float)timeStagesAVG[GENER_COLLISIONS] / 1000.0f << endl;
-		cout << "resolving collision constraints: " <<
+		cout << "resolving collision constraints:  " <<
 			(float)timeStagesAVG[RESOL_COLLISIONS] / 1000.0f << endl;
 
 		cout << "max times (microseconds)" << endl;
-		cout << "solving internal constraints: " <<
+		cout << "solving internal constraints:     " <<
 			(float)timeStagesMax[PROJ_CONSTRAINTS] / 1000.0f << endl;
 		cout << "generating collision constraints: " <<
 			(float)timeStagesMax[GENER_COLLISIONS] / 1000.0f << endl;
-		cout << "resolving collision constraints: " <<
+		cout << "resolving collision constraints:  " <<
 			(float)timeStagesMax[RESOL_COLLISIONS] / 1000.0f << endl;
 
 		cout << "min times (microseconds)" << endl;
-		cout << "solving internal constraints: " <<
+		cout << "solving internal constraints:     " <<
 			(float)timeStagesMin[PROJ_CONSTRAINTS] / 1000.0f << endl;
 		cout << "generating collision constraints: " <<
 			(float)timeStagesMin[GENER_COLLISIONS] / 1000.0f << endl;
-		cout << "resolving collision constraints: " <<
+		cout << "resolving collision constraints:  " <<
 			(float)timeStagesMin[RESOL_COLLISIONS] / 1000.0f << endl;
 	}
 #endif

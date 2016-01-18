@@ -93,9 +93,10 @@ bool init(int argc, char **argv) {
 
     initShaders(program);
 	
-	//loadDancingBear();
+	//loadPerformanceTests();
+	loadDancingBear();
 	//loadStaticCollDetectDebug();
-	loadStaticCollResolveDebug();
+	//loadStaticCollResolveDebug();
 
     glEnable(GL_DEPTH_TEST);
 
@@ -136,6 +137,17 @@ void loadDancingBear() {
 	sim->cloths.at(1)->addPinConstraint(dressLeftShoulder, bearLeftShoulder, bearSSBO);
 	sim->cloths.at(1)->addPinConstraint(dressRightShoulder, bearRightShoulder, bearSSBO);
 	sim->cloths.at(1)->color = glm::vec3(1.0f, 0.5f, 0.5f);
+}
+
+void loadPerformanceTests() {
+	std::vector<string> colliders;
+	std::vector<string> cloths;
+	cloths.push_back("meshes/perf/cloth_256.obj");
+	colliders.push_back("meshes/perf/ball_98.obj");
+	zoom = 10.0f;
+	updateCamera();
+	sim = new Simulation(colliders, cloths);
+	checkGLError("init sim");
 }
 
 void loadStaticCollDetectDebug() {
