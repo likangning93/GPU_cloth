@@ -7,6 +7,12 @@
 
 #define DEBUG_VERBOSE 0
 
+#define QUERY_PERFORMANCE 1
+
+#define PROJ_CONSTRAINTS 0
+#define GENER_COLLISIONS 1
+#define RESOL_COLLISIONS 2
+
 Simulation::Simulation(vector<string> &body_filenames,
 	vector<string> &cloth_filenames) {
 	initComputeProgs();
@@ -40,6 +46,24 @@ Simulation::Simulation(vector<string> &body_filenames,
 		checkGLError("init cloths");
 	}
 
+#if QUERY_PERFORMANCE
+	glGenQueries(1, &time_query);
+	elapsed_time = 0;
+	frameCount = 0;
+	timeStagesTotal[PROJ_CONSTRAINTS] = 0;
+	timeStagesTotal[GENER_COLLISIONS] = 0;
+	timeStagesTotal[RESOL_COLLISIONS] = 0;
+	timeStagesAVG[PROJ_CONSTRAINTS] = 0.0f;
+	timeStagesAVG[GENER_COLLISIONS] = 0.0f;
+	timeStagesAVG[RESOL_COLLISIONS] = 0.0f;
+	timeStagesMin[PROJ_CONSTRAINTS] = HUGE_VAL;
+	timeStagesMin[GENER_COLLISIONS] = HUGE_VAL;
+	timeStagesMin[RESOL_COLLISIONS] = HUGE_VAL;
+	timeStagesMax[PROJ_CONSTRAINTS] = 0;
+	timeStagesMax[GENER_COLLISIONS] = 0;
+	timeStagesMax[RESOL_COLLISIONS] = 0;
+#endif
+
 }
 
 Simulation::~Simulation() {
@@ -52,6 +76,15 @@ Simulation::~Simulation() {
 	}
 }
 
+//http://stackoverflow.com/questions/3418231/replace-part-of-a-string-with-another-string
+bool replace(std::string& str, const std::string& from, const std::string& to) {
+	size_t start_pos = str.find(from);
+	if (start_pos == std::string::npos)
+		return false;
+	str.replace(start_pos, from.length(), to);
+	return true;
+}
+
 GLuint initComputeProg(const char *path) {
     GLuint prog = glCreateProgram();
     GLuint cs = glCreateShader(GL_COMPUTE_SHADER);
@@ -60,7 +93,19 @@ GLuint initComputeProg(const char *path) {
     const char *cs_str;
     cs_str = glslUtility::loadFile(path, cs_len);
 
-    glShaderSource(cs, 1, &cs_str, &cs_len);
+	// check and edit the shader so the workgroup size is correct
+	string str_shader = string(cs_str);
+	str_shader.resize(cs_len);
+	replace(str_shader, "WORK_GROUP_SIZE XX", "WORK_GROUP_SIZE " + std::to_string(WORK_GROUP_SIZE));
+
+	cs_len = str_shader.length();
+
+	char *cs_str_edited = new char[str_shader.length() + 1];
+	strcpy(cs_str_edited, str_shader.c_str());
+
+	//cs_str = str_shader->c_str();
+
+	glShaderSource(cs, 1, &cs_str_edited, &cs_len);
 
     GLint status;
 
@@ -69,11 +114,10 @@ GLuint initComputeProg(const char *path) {
     if (!status) {
         printf("Error compiling compute shader: %s\n", path);
         glslUtility::printShaderInfoLog(cs);
-		printf(cs_str);
+		printf(cs_str_edited);
 		cout << endl;
         exit(EXIT_FAILURE);
     }
-    delete[] cs_str;
 
     glAttachShader(prog, cs);
     glLinkProgram(prog);
@@ -81,11 +125,35 @@ GLuint initComputeProg(const char *path) {
     if (!status) {
         printf("Error linking compute shader: %s\n", path);
         glslUtility::printLinkInfoLog(prog);
-		printf(cs_str);
+		printf(cs_str_edited);
 		cout << endl;
         exit(EXIT_FAILURE);
     }
+
+	delete[] cs_str;
+	delete[] cs_str_edited;
+
 	return prog;
+}
+
+void Simulation::updateStat(int stat) {
+	glEndQuery(GL_TIME_ELAPSED);
+
+	// wait until the query is available and return.
+	// if this takes too long, alert and continue.
+	// TODO: see if the double buffering version works with compute shaders.
+	int done = 0;
+	while (!done) {
+		glGetQueryObjectiv(time_query,
+			GL_QUERY_RESULT_AVAILABLE,
+			&done);
+	}
+	glGetQueryObjectui64v(time_query, GL_QUERY_RESULT, &elapsed_time);
+	timeStagesTotal[stat] += elapsed_time;
+	timeStagesAVG[stat] = (float)timeStagesTotal[stat] / (float)frameCount;
+
+	timeStagesMin[stat] = glm::min(timeStagesMin[stat], elapsed_time);
+	timeStagesMax[stat] = glm::max(timeStagesMax[stat], elapsed_time);
 }
 
 void Simulation::initComputeProgs() {
@@ -180,6 +248,10 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glDispatchCompute(workGroupCountPinConstraints, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
 
+#if QUERY_PERFORMANCE
+	glBeginQuery(GL_TIME_ELAPSED, time_query);
+#endif
+
 	/* project cloth constraints N times */
 	for (int i = 0; i < projectTimes; i++) {
 		glUseProgram(prog_ppd6_projectClothConstraints);
@@ -225,16 +297,32 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 
 	}
 
+#if QUERY_PERFORMANCE
+	updateStat(PROJ_CONSTRAINTS);
+#endif
+
+#if QUERY_PERFORMANCE
+	glBeginQuery(GL_TIME_ELAPSED, time_query);
+#endif
+
 	/* generate and resolve collision constraints */
 	for (int i = 0; i < numRigids; i++) {
 		genCollisionConstraints(cloth, rigids.at(i));
 	}
+
+#if QUERY_PERFORMANCE
+	updateStat(GENER_COLLISIONS);
+#endif
 
 #if DEBUG_VERBOSE
 	cout << "init ";
 	retrieveBuffer(cloth->ssbo_pos, 1);
 	cout << "pred befor ";
 	retrieveBuffer(cloth->ssbo_pos_pred2, 1);
+#endif
+
+#if QUERY_PERFORMANCE
+	glBeginQuery(GL_TIME_ELAPSED, time_query);
 #endif
 
 	glUseProgram(prog_projectCollisionConstraints);
@@ -244,6 +332,10 @@ void Simulation::stepSingleCloth(Cloth *cloth) {
 	glUniform1i(0, numVertices);
 	glDispatchCompute(workGroupCount_vertices, 1, 1);
 	glMemoryBarrier(GL_SHADER_STORAGE_BARRIER_BIT);
+
+#if QUERY_PERFORMANCE
+	updateStat(RESOL_COLLISIONS);
+#endif
 
 #if DEBUG_VERBOSE
 	cout << "pred after ";
@@ -307,6 +399,7 @@ void Simulation::animateRbody(Rbody *rbody) {
 }
 
 void Simulation::stepSimulation() {
+	frameCount++;
 	for (int i = 0; i < numRigids; i++) {
 		animateRbody(rigids.at(i));
 	}
@@ -315,6 +408,37 @@ void Simulation::stepSimulation() {
 		stepSingleCloth(cloths.at(i));
 	}
 	currentTime += timeStep;
+
+#if QUERY_PERFORMANCE
+	// report performance every 360 frames
+	if (frameCount % 360 == 0) {
+		cout << "performance as of frame " << frameCount << endl;
+		cout << "average times (microseconds)" << endl;
+		cout << "solving internal constraints: " <<
+			(float)timeStagesAVG[PROJ_CONSTRAINTS] / 1000.0f << endl;
+		cout << "generating collision constraints: " <<
+			(float)timeStagesAVG[GENER_COLLISIONS] / 1000.0f << endl;
+		cout << "resolving collision constraints: " <<
+			(float)timeStagesAVG[RESOL_COLLISIONS] / 1000.0f << endl;
+
+		cout << "max times (microseconds)" << endl;
+		cout << "solving internal constraints: " <<
+			(float)timeStagesMax[PROJ_CONSTRAINTS] / 1000.0f << endl;
+		cout << "generating collision constraints: " <<
+			(float)timeStagesMax[GENER_COLLISIONS] / 1000.0f << endl;
+		cout << "resolving collision constraints: " <<
+			(float)timeStagesMax[RESOL_COLLISIONS] / 1000.0f << endl;
+
+		cout << "min times (microseconds)" << endl;
+		cout << "solving internal constraints: " <<
+			(float)timeStagesMin[PROJ_CONSTRAINTS] / 1000.0f << endl;
+		cout << "generating collision constraints: " <<
+			(float)timeStagesMin[GENER_COLLISIONS] / 1000.0f << endl;
+		cout << "resolving collision constraints: " <<
+			(float)timeStagesMin[RESOL_COLLISIONS] / 1000.0f << endl;
+	}
+#endif
+
 }
 
 void Simulation::selectByRaycast(glm::vec3 eye, glm::vec3 dir) {

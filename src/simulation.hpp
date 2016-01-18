@@ -9,6 +9,17 @@ using namespace std;
 
 class Simulation
 {
+private:
+	GLuint time_query;
+	GLuint64 elapsed_time;
+	GLuint64 frameCount;
+	GLuint64 timeStagesTotal[3]; // ns
+	float timeStagesAVG[3]; // ns
+	GLuint64 timeStagesMin[3]; // ns
+	GLuint64 timeStagesMax[3]; // ns
+
+	void updateStat(int stat);
+
 public:
 	Simulation(vector<string> &body_filenames, vector<string> &cloth_filenames);
 	~Simulation();

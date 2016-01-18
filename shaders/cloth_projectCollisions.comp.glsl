@@ -2,8 +2,8 @@
 #extension GL_ARB_compute_shader: enable
 #extension GL_ARB_shader_storage_buffer_object: enable
 
-// TODO: change work group size here and in nbody.cpp
-#define WORK_GROUP_SIZE_VELPOS 32
+// work group size injected before compilation
+#define WORK_GROUP_SIZE XX
 
 layout(std430, binding = 0) readonly buffer _pCloth1 { // cloth positions in previous timestep
     vec4 pCloth1[];
@@ -15,7 +15,7 @@ layout(std430, binding = 2) readonly buffer _pCollisionConstraints { // vec4s of
     vec4 pClothCollisionConstraints[];
 };
 
-layout(local_size_x = WORK_GROUP_SIZE_VELPOS, local_size_y = 1, local_size_z = 1) in;
+layout(local_size_x = WORK_GROUP_SIZE, local_size_y = 1, local_size_z = 1) in;
 
 layout(location = 0) uniform int numPositions;
 
