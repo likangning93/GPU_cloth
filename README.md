@@ -1,6 +1,8 @@
 # GPU cloth with OpenGL Compute Shaders
 
-This project in progress is a PBD cloth simulation accelerated and parallelized using OpenGL compute shaders. For more details on the project motivation and milestones, see the [slides](https://docs.google.com/presentation/d/1t7K-MafQH_8fw7R2KPMy-iOtFBdPRJSsHp4oSA9XR0c/edit?usp=sharing).
+This project in progress is a PBD cloth simulation accelerated and parallelized using OpenGL compute shaders.
+For a quick project overview, see slides [here](https://docs.google.com/presentation/d/10NuqXlJcnySN1iwSSfF_0jpzQrNrDT12sbKtzZ99fFk/edit?usp=sharing).
+For more details on the project milestones and development during the semester, see the [milestone slides](https://docs.google.com/presentation/d/1t7K-MafQH_8fw7R2KPMy-iOtFBdPRJSsHp4oSA9XR0c/edit?usp=sharing).
 
 ## Work-In-Progress Video
 ![](images/danube.gif)
@@ -56,7 +58,8 @@ I broke down each PBD "stage" into its own shader, along with a few more. They a
 
 ## Performance Analysis
 
-*January 17, 2015*
+**January 17, 2015**
+
 I modified my data collection methods! The simulation class now contains code for using OpenGL Timer Queries to assess how long different PBD stages take to run. This code is heavily based off of the method described at [lighthouse3d](http://www.lighthouse3d.com/tutorials/opengl-timer-query/).
 
 As before, I ran 3 types of tests:
@@ -75,7 +78,8 @@ However, note that the amount of time taken to perform position correction decre
 
 Despite this apparent anomaly, the current data collection method seems to be satisfactory for documenting performance improvemnets moving forward with acceleration structures.
 
-*December 11, 2015*
+**December 11, 2015**
+
 I performed 3 types of tests for performance analysis:
 - vertex count in a cloth
 - vertex count in a collider
@@ -83,7 +87,8 @@ I performed 3 types of tests for performance analysis:
 All data was collected from 20 seconds of simulation using Nvidia's profiler in NSIGHT for Visual Studio.
 All testing was performed on Windows 10 64 bit on a GTX 970 GPU with 4 gigabytes of VRAM and an Intel i7 4790 CPU with 16 gigabytes of RAM. I collected data on time spent on the compute shader dispatch, time spent in memory barriers, and GPU utilization.
 
-#### Cloth Vertex Count
+*Cloth Vertex Count*
+
 PBD runs on each cloth vertex multiple times per frame, so I wanted to look at the difference in performance hits between increasing the cloth vertex cound and increasing the collider vertex count.
 ![](images/charts/varying_cloth_times.png)
 ![](images/charts/varying_cloth_gpu.png)
@@ -92,19 +97,22 @@ Unfortunately, the data does not really allow an immediately clear explanation, 
 
 One noticeable trend, however, is that the time spent in memory operations in in memory barriers seems to be fairly consistent and minimal across different vertex counts. More data is needed to confirm this.
 
-#### Collider Vertex Count
+*Collider Vertex Count*
+
 ![](images/charts/varying_collider_times.png)
 ![](images/charts/varying_collider_gpu.png)
 
 Varying the vertex count on the collider appears to also produce fairly consistent results across stages, this respite the fact that my collision detection is relatively naive and iteratively checks every triangle in the collider against each cloth vertex in parallel. The GPU utilization here partially makes more sense in that bigger collider meshes would doubtlessly take more resources to store and process.
 
-#### Collider Vertex Count
+*Collider Vertex Count*
+
 ![](images/charts/varying_workgroup_times.png)
 ![](images/charts/varying_workground_gpu.png)
 
 Varying the work group size does not seem to produce a trend in the actual dispatch times, and once again the GPU utilization percentage is somewhat perplexing.
 
-#### Overall Analysis Notes
+*Overall Analysis Notes*
+
 It should be noted that the times recorded were all taken from NSIGHT's statistics on "time spent in the OpenGL API." This could mean that the time does not just include the time that the GPU takes to run a computation but also the additional time it takes to launch a compute shader invocation. If this is the case it is possible that these invocation launches are swallowing up the actual GPU compute times, resulting in the consistencies seen in dispatch times. This could also explain the seemingly trendless GPU utilization data.
 
 ## Tips and Tricks
